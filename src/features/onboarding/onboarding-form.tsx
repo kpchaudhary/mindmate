@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { examTypes } from "@/lib/db/schema";
+import { t, type TranslationKey } from "@/lib/i18n/translations";
+import { examTypes, type Language } from "@/lib/db/schema";
 import type { SessionUser } from "@/lib/auth/types";
 
 const EXAM_DESCRIPTIONS: Record<string, string> = {
@@ -27,10 +28,12 @@ const EXAM_DESCRIPTIONS: Record<string, string> = {
 };
 
 type OnboardingFormProps = {
+  language: Language;
+  onLanguageChange: (language: Language) => void;
   onComplete: (user: SessionUser) => void;
 };
 
-export function OnboardingForm({ onComplete }: OnboardingFormProps) {
+export function OnboardingForm({ language, onLanguageChange, onComplete }: OnboardingFormProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
@@ -39,13 +42,19 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const translate = (key: TranslationKey) => t(key, language);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const payload: Record<string, string> = { name, examType };
+      const payload: Record<string, string> = { name, examType, language };
       if (examDate) {
         payload.examDate = new Date(examDate).toISOString();
       }
@@ -62,12 +71,12 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
       const user = (await response.json()) as SessionUser;
       toast({
-        title: `Welcome, ${user.name}!`,
-        description: "Your dashboard is ready.",
+        title: `${translate("onboarding.welcome")}, ${user.name}!`,
+        description: translate("onboarding.toastDescription"),
       });
       onComplete(user);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(translate("onboarding.error"));
     } finally {
       setLoading(false);
     }
@@ -88,12 +97,12 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
           ))}
         </div>
         <CardTitle>
-          {step === 1 ? "Welcome to MindMate" : "Almost there"}
+          {step === 1 ? translate("onboarding.welcome") : translate("onboarding.almostThere")}
         </CardTitle>
         <CardDescription>
           {step === 1
-            ? "Tell us your name to personalize your wellness journey."
-            : "Select your exam so MindMate can tailor insights to your prep."}
+            ? translate("onboarding.step1Description")
+            : translate("onboarding.step2Description")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,25 +118,42 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
           className="space-y-4"
         >
           {step === 1 ? (
-            <div className="space-y-2">
-              <Label htmlFor="name">Your name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Aarav"
-                required
-                maxLength={80}
-                autoFocus
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="name">{translate("profile.name")}</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={translate("onboarding.namePlaceholder")}
+                  required
+                  maxLength={80}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="language">{translate("settings.language")}</Label>
+                <Select
+                  value={language}
+                  onValueChange={(value) => onLanguageChange(value as Language)}
+                >
+                  <SelectTrigger id="language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="hi">हिन्दी</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="exam">Exam you&apos;re preparing for</Label>
+                <Label htmlFor="exam">{translate("profile.exam")}</Label>
                 <Select value={examType} onValueChange={setExamType} required>
                   <SelectTrigger id="exam">
-                    <SelectValue placeholder="Select exam" />
+                    <SelectValue placeholder={translate("onboarding.examPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {examTypes.map((exam) => (
@@ -139,12 +165,17 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 </Select>
               </div>
               {examType && EXAM_DESCRIPTIONS[examType] && (
-                <p className="text-sm text-muted-foreground rounded-lg bg-accent/50 p-3">
+                <p className="rounded-lg bg-accent/50 p-3 text-sm text-muted-foreground">
                   {EXAM_DESCRIPTIONS[examType]}
                 </p>
               )}
               <div className="space-y-2">
-                <Label htmlFor="exam-date">When is your exam? (optional)</Label>
+                <Label htmlFor="exam-date">
+                  {translate("onboarding.examDate")}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({translate("onboarding.examDateOptional")})
+                  </span>
+                </Label>
                 <Input
                   id="exam-date"
                   type="date"
@@ -153,7 +184,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                   min={new Date().toISOString().slice(0, 10)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enables exam countdown on your dashboard
+                  {translate("profile.examDateHint")}
                 </p>
               </div>
             </>
@@ -167,28 +198,21 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
           <div className="flex gap-2">
             {step === 2 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(1)}
-              >
+              <Button type="button" variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft className="h-4 w-4" />
-                Back
+                {translate("onboarding.back")}
               </Button>
             )}
             <Button
               type="submit"
               className="flex-1 bg-gradient-purple"
-              disabled={
-                loading ||
-                (step === 1 ? !name.trim() : !examType)
-              }
+              disabled={loading || (step === 1 ? !name.trim() : !examType)}
             >
               {loading
-                ? "Setting up..."
+                ? translate("onboarding.settingUp")
                 : step === 1
-                  ? "Continue"
-                  : "Start my wellness journey"}
+                  ? translate("onboarding.continue")
+                  : translate("onboarding.start")}
             </Button>
           </div>
         </form>

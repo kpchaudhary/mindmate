@@ -108,6 +108,20 @@ export type TranslationKey =
   | "profile.notSet"
   | "profile.customPhoto"
   | "profile.usingInitials"
+  | "onboarding.pageTitle"
+  | "onboarding.pageSubtitle"
+  | "onboarding.welcome"
+  | "onboarding.almostThere"
+  | "onboarding.step1Description"
+  | "onboarding.step2Description"
+  | "onboarding.namePlaceholder"
+  | "onboarding.examPlaceholder"
+  | "onboarding.continue"
+  | "onboarding.back"
+  | "onboarding.start"
+  | "onboarding.settingUp"
+  | "onboarding.error"
+  | "onboarding.toastDescription"
   | "onboarding.examDate"
   | "onboarding.examDateOptional"
   | "dashboard.moodInsights"
@@ -260,6 +274,21 @@ const en: Record<TranslationKey, string> = {
   "profile.notSet": "Not set",
   "profile.customPhoto": "Custom photo",
   "profile.usingInitials": "Using initials",
+  "onboarding.pageTitle": "Set up your profile",
+  "onboarding.pageSubtitle":
+    "Tell us a bit about yourself so MindMate can personalize your wellness insights.",
+  "onboarding.welcome": "Welcome to MindMate",
+  "onboarding.almostThere": "Almost there",
+  "onboarding.step1Description": "Tell us your name to personalize your wellness journey.",
+  "onboarding.step2Description": "Select your exam so MindMate can tailor insights to your prep.",
+  "onboarding.namePlaceholder": "e.g. Aarav",
+  "onboarding.examPlaceholder": "Select exam",
+  "onboarding.continue": "Continue",
+  "onboarding.back": "Back",
+  "onboarding.start": "Start my wellness journey",
+  "onboarding.settingUp": "Setting up...",
+  "onboarding.error": "Something went wrong. Please try again.",
+  "onboarding.toastDescription": "Your dashboard is ready.",
   "onboarding.examDate": "When is your exam?",
   "onboarding.examDateOptional": "Optional — you can add this later in settings",
   "dashboard.moodInsights": "Mood Insights",
@@ -414,6 +443,21 @@ const hi: Record<TranslationKey, string> = {
   "profile.notSet": "सेट नहीं",
   "profile.customPhoto": "कस्टम फोटो",
   "profile.usingInitials": "Initials इस्तेमाल हो रहे हैं",
+  "onboarding.pageTitle": "अपनी प्रोफ़ाइल सेट करें",
+  "onboarding.pageSubtitle":
+    "MindMate को अपने बारे में बताएं ताकि wellness insights आपके लिए personalize हों।",
+  "onboarding.welcome": "MindMate में आपका स्वागत है",
+  "onboarding.almostThere": "लगभग हो गया",
+  "onboarding.step1Description": "अपना नाम बताएं ताकि wellness journey personalize हो सके।",
+  "onboarding.step2Description": "अपना एग्जाम चुनें ताकि insights आपकी तैयारी के अनुसार हों।",
+  "onboarding.namePlaceholder": "जैसे आरव",
+  "onboarding.examPlaceholder": "एग्जाम चुनें",
+  "onboarding.continue": "आगे बढ़ें",
+  "onboarding.back": "वापस",
+  "onboarding.start": "अपनी wellness journey शुरू करें",
+  "onboarding.settingUp": "सेट अप हो रहा है...",
+  "onboarding.error": "कुछ गलत हो गया। फिर कोशिश करें।",
+  "onboarding.toastDescription": "आपका डैशबोर्ड तैयार है।",
   "onboarding.examDate": "आपका एग्जाम कब है?",
   "onboarding.examDateOptional": "वैकल्पिक — बाद में सेटिंग्स में जोड़ सकते हैं",
   "dashboard.moodInsights": "मूड इनसाइट्स",
