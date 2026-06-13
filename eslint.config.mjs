@@ -12,7 +12,12 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: ["**/*.test.ts", "**/*.test.tsx", "vitest.config.ts", "vitest.setup.ts"],
+    rules: {
+      "jsx-a11y/alt-text": "error",
+      "jsx-a11y/label-has-associated-control": "warn",
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+    },
   },
 ];
 

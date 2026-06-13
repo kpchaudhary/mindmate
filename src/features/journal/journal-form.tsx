@@ -11,8 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useVoiceJournal } from "@/hooks/use-voice-journal";
 import { InsightCard, type InsightData } from "@/features/journal/insight-card";
 import { VoiceJournalButton } from "@/features/journal/voice-journal-button";
+import { MoodIcon } from "@/components/ui/mood-icon";
 import { MOOD_OPTIONS } from "@/lib/mood";
 import { getJournalPromptChips } from "@/lib/i18n/translations";
+import { apiFetch } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/lib/auth/types";
@@ -72,7 +74,10 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
     const parsedMock = mockScore.trim() ? Number(mockScore) : null;
 
     try {
-      const response = await fetch("/api/journal", {
+      const data = await apiFetch<{
+        analysis: InsightData;
+        streakCount?: number;
+      }>("/api/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -81,15 +86,6 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
           mockScore: parsedMock,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Analysis failed");
-      }
-
-      const data = (await response.json()) as {
-        analysis: InsightData;
-        streakCount?: number;
-      };
       setInsight(data.analysis);
       setContent("");
       setMockScore("");
@@ -104,33 +100,33 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
       onSubmitted?.();
       setTimeout(() => insightRef.current?.focus(), 100);
     } catch {
-      setError("Could not analyze your journal. Please try again.");
+      setError(t("journal.analyzeError"));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <Card className="corners corners-purple overflow-hidden">
-        <div className="bg-gradient-purple px-6 py-4 text-primary-foreground">
+        <div className="bg-gradient-purple px-4 py-4 text-primary-foreground sm:px-6">
           <h2 className="text-lg font-semibold">{t("journal.title")}</h2>
           <p className="mt-1 text-sm opacity-90">
             {t("journal.description").replace("today", `today, ${user.name}`)}
           </p>
         </div>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-3">
-              <Label>{t("journal.moodToday")}</Label>
-              <div className="grid grid-cols-5 gap-2">
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium">{t("journal.moodToday")}</legend>
+              <div className="grid min-w-0 grid-cols-5 gap-1 sm:gap-2">
                 {MOOD_OPTIONS.map((mood) => (
                   <button
                     key={mood.score}
                     type="button"
                     onClick={() => setMoodScore(mood.score)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border p-2 transition-all",
+                      "flex min-w-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition-all sm:p-2",
                       moodScore === mood.score
                         ? "border-primary bg-primary/10 ring-2 ring-primary/30"
                         : "border-border hover:bg-accent/50"
@@ -138,22 +134,23 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                     aria-pressed={moodScore === mood.score}
                     aria-label={t(mood.labelKey)}
                   >
-                    <span className="text-2xl" aria-hidden="true">{mood.emoji}</span>
+                    <MoodIcon score={mood.score} className="h-7 w-7 sm:h-8 sm:w-8" />
                     <span className="text-[10px] text-muted-foreground hidden sm:block">
                       {t(mood.labelKey)}
                     </span>
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-primary font-medium" aria-live="polite">
-                {selectedMood.emoji} {t(selectedMood.labelKey)} ({moodScore}/5)
+              <p className="flex items-center gap-1.5 text-sm font-medium text-primary" aria-live="polite">
+                <MoodIcon score={moodScore} className="h-5 w-5" />
+                {t(selectedMood.labelKey)} ({moodScore}/5)
               </p>
-            </div>
+            </fieldset>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <Label htmlFor="journal">{t("journal.whatsOnMind")}</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
                   <span className="text-xs text-muted-foreground">{content.length} / 5000</span>
                   <VoiceJournalButton
                     isSupported={voice.isSupported}
@@ -172,6 +169,8 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                 required
                 minLength={10}
                 maxLength={5000}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "journal-error" : undefined}
               />
               {!content && (
                 <div className="flex flex-wrap gap-2">
@@ -181,7 +180,7 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="text-xs h-auto py-1.5"
+                      className="h-auto max-w-full whitespace-normal py-1.5 text-left text-xs"
                       onClick={() => setContent(chip)}
                     >
                       {chip}
@@ -218,7 +217,9 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
             </div>
 
             {error && (
-              <p className="text-sm text-destructive" role="alert">{error}</p>
+              <p id="journal-error" className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
             )}
 
             <Button

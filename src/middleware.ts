@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/constants";
+import { isSafeRedirect } from "@/lib/safe-redirect";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 const PUBLIC_API_PATHS = ["/api/auth/login", "/api/auth/register"];
@@ -23,7 +24,7 @@ export function middleware(request: NextRequest) {
     }
 
     const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/") {
+    if (pathname !== "/" && isSafeRedirect(pathname)) {
       loginUrl.searchParams.set("redirect", pathname);
     }
     return NextResponse.redirect(loginUrl);

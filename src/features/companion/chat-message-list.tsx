@@ -58,7 +58,13 @@ export function ChatMessageList({
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
+      aria-label="Chat messages"
+    >
       {messages.map((msg) => (
         <ChatBubble
           key={msg.id}

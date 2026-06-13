@@ -1,5 +1,5 @@
-const CACHE_NAME = "mindmate-v1";
-const PRECACHE_URLS = ["/", "/insights", "/journal", "/companion", "/manifest.webmanifest"];
+const CACHE_NAME = "mindmate-v2";
+const PRECACHE_URLS = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -20,9 +20,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/api/")) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
+  const isDocument = event.request.mode === "navigate" || event.request.destination === "document";
+  if (isDocument) {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
           if (response.ok && url.origin === self.location.origin) {
             const clone = response.clone();
@@ -30,8 +31,12 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });

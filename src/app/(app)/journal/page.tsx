@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BookOpen, Flame } from "lucide-react";
-import { AppShell, useUser } from "@/components/app-shell";
+import { useUser } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { JournalForm } from "@/features/journal/journal-form";
 import { JournalHistory } from "@/features/journal/journal-history";
@@ -18,15 +18,15 @@ function JournalHeader({
   const greeting = getTimeGreeting();
 
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" />
-          <h1 className="text-2xl font-bold">
+    <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-1">
+        <div className="flex min-w-0 items-start gap-2">
+          <BookOpen className="mt-0.5 h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+          <h1 className="min-w-0 break-words text-xl font-bold sm:text-2xl">
             {greeting}, {user.name}
           </h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground sm:text-base">
           {user.examType} · {t("journal.pageSubtitle")}
         </p>
       </div>
@@ -50,18 +50,18 @@ function JournalContent() {
   return (
     <>
       <JournalHeader user={user} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <JournalForm user={user} onSubmitted={() => setRefreshKey((k) => k + 1)} />
-        <JournalHistory refreshKey={refreshKey} />
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0">
+          <JournalForm user={user} onSubmitted={() => setRefreshKey((k) => k + 1)} />
+        </div>
+        <div className="min-w-0 xl:sticky xl:top-20 xl:self-start">
+          <JournalHistory refreshKey={refreshKey} />
+        </div>
       </div>
     </>
   );
 }
 
 export default function JournalPage() {
-  return (
-    <AppShell>
-      <JournalContent />
-    </AppShell>
-  );
+  return <JournalContent />;
 }

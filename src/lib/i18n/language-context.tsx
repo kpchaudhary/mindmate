@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import {
   t as translate,
   type TranslationKey,
@@ -42,6 +42,10 @@ export function LanguageProvider({
     }),
     [language]
   );
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

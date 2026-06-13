@@ -5,6 +5,7 @@ import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { MarkdownLite } from "@/lib/markdown-lite";
 import { useLanguage } from "@/lib/i18n/language-context";
 
@@ -72,13 +73,19 @@ export function StudyPlanAdvicePanel() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t("studyPlan.advicePlaceholder")}
-            rows={2}
-            className="min-h-0 resize-none"
-          />
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="study-plan-advice" className="sr-only">
+              {t("studyPlan.advicePlaceholder")}
+            </Label>
+            <Textarea
+              id="study-plan-advice"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t("studyPlan.advicePlaceholder")}
+              rows={2}
+              className="min-h-0 resize-none"
+            />
+          </div>
           <Button type="submit" size="icon" disabled={loading || !input.trim()} aria-label="Send">
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -89,7 +96,9 @@ export function StudyPlanAdvicePanel() {
         </form>
 
         {error && (
-          <p className="text-sm text-destructive">{t("studyPlan.adviceError")}</p>
+          <p className="text-sm text-destructive" role="alert">
+            {t("studyPlan.adviceError")}
+          </p>
         )}
 
         {result && (

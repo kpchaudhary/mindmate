@@ -19,6 +19,8 @@ export function ChatBubble({ role, content, userName, avatarUrl, timestamp }: Ch
   const isUser = role === "user";
   const reducedMotion = useReducedMotion();
 
+  const speakerLabel = isUser ? `You said: ${content}` : `MindMate said: ${content}`;
+
   const bubble = (
     <div
       className={cn(
@@ -27,6 +29,7 @@ export function ChatBubble({ role, content, userName, avatarUrl, timestamp }: Ch
           ? "rounded-br-md bg-primary text-primary-foreground"
           : "rounded-bl-md bg-accent text-accent-foreground"
       )}
+      aria-label={speakerLabel}
     >
       {isUser ? (
         <p className="text-sm whitespace-pre-wrap">{content}</p>

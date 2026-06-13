@@ -36,6 +36,8 @@ loadEnvFile(".env.local");
 const migrationFiles = [
   "../drizzle/0002_product_features.sql",
   "../drizzle/0003_study_plan.sql",
+  "../drizzle/0004_profile_avatar.sql",
+  "../drizzle/0005_performance_indexes.sql",
 ];
 
 const databaseUrl = process.env.DATABASE_URL;

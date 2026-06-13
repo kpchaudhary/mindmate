@@ -66,6 +66,7 @@ type GeminiGenerateParams = {
   userPrompt: string;
   jsonSchema?: GeminiJsonSchema;
   language?: Language;
+  maxOutputTokens?: number;
 };
 
 async function generateWithGemini({
@@ -73,13 +74,14 @@ async function generateWithGemini({
   userPrompt,
   jsonSchema,
   language = "en",
+  maxOutputTokens = 2048,
 }: GeminiGenerateParams): Promise<string> {
   const model = getModel();
-  const url = `${GEMINI_API_URL}/${model}:generateContent?key=${getApiKey()}`;
+  const url = `${GEMINI_API_URL}/${model}:generateContent`;
 
   const generationConfig: Record<string, unknown> = {
     temperature: 0.7,
-    maxOutputTokens: 2048,
+    maxOutputTokens,
   };
 
   if (jsonSchema) {
@@ -94,7 +96,10 @@ async function generateWithGemini({
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": getApiKey(),
+    },
     body: JSON.stringify({
       systemInstruction: {
         parts: [{ text: fullSystemInstruction }],
@@ -110,15 +115,34 @@ async function generateWithGemini({
   }
 
   const data = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+      finishReason?: string;
+    }>;
   };
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const candidate = data.candidates?.[0];
+  const text = candidate?.content?.parts?.[0]?.text;
   if (!text) {
     throw new Error("Empty response from Gemini");
   }
 
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    throw new Error("Gemini response truncated (MAX_TOKENS)");
+  }
+
   return text;
+}
+
+function parseGeminiJson<T>(raw: string, schema: { parse: (value: unknown) => T }): T {
+  try {
+    return schema.parse(JSON.parse(raw));
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(`Invalid JSON from Gemini: ${error.message}`);
+    }
+    throw error;
+  }
 }
 
 export type AnalysisContext = {
@@ -186,8 +210,7 @@ Return JSON with: mood, emotionalPatterns, stressTriggers, copingStrategy, motiv
     language: context.language,
   });
 
-  const parsed = journalAnalysisSchema.parse(JSON.parse(raw));
-  return parsed;
+  return parseGeminiJson(raw, journalAnalysisSchema);
 }
 
 export type CompanionContext = {
@@ -303,7 +326,7 @@ Return JSON with: summary (2-3 sentences reviewing the week), actionableInsight 
     language: context.language,
   });
 
-  return weeklySummarySchema.parse(JSON.parse(raw));
+  return parseGeminiJson(raw, weeklySummarySchema);
 }
 
 export type StudyPlanContext = {
@@ -332,8 +355,9 @@ You are MindMate's study coach for ${context.studentName} preparing for ${contex
 Create a practical 7-day study plan — not therapy, not wellness advice.
 Use exam-specific subjects (e.g. NEET: Physics, Chemistry, Biology; JEE: Physics, Chemistry, Maths).
 ${intensityNote}
-Each day should have 2-4 focused tasks. Total daily study time should match wellness state.
-Explain in rationale how mood/burnout influenced the plan intensity.
+Each day should have 2-3 focused tasks (14-21 tasks total). Total daily study time should match wellness state.
+Keep each task description to one short sentence (under 20 words).
+Explain in rationale how mood/burnout influenced the plan intensity (2-3 sentences max).
 `.trim();
 
   const userPrompt = `
@@ -357,9 +381,10 @@ Return JSON with:
     userPrompt,
     jsonSchema: studyPlanResponseSchema,
     language: context.language,
+    maxOutputTokens: 8192,
   });
 
-  return studyPlanSchema.parse(JSON.parse(raw));
+  return parseGeminiJson(raw, studyPlanSchema);
 }
 
 export type StudyPlanAdviceContext = {
@@ -414,7 +439,7 @@ Return JSON with advice (2-3 short paragraphs) and suggestedChanges (2-4 bullet-
     language: context.language,
   });
 
-  return studyPlanAdviceSchema.parse(JSON.parse(raw));
+  return parseGeminiJson(raw, studyPlanAdviceSchema);
 }
 
 export type MoodSummaryContext = {
@@ -468,5 +493,5 @@ Return JSON with patternInsight, correlationNote, gentleAction (one small doable
     language: context.language,
   });
 
-  return moodSummarySchema.parse(JSON.parse(raw));
+  return parseGeminiJson(raw, moodSummarySchema);
 }

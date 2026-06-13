@@ -35,6 +35,7 @@ export function StudyPlanDashboard({ user }: StudyPlanDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(false);
+  const [generateError, setGenerateError] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,6 +60,7 @@ export function StudyPlanDashboard({ user }: StudyPlanDashboardProps) {
     if (data?.plan && !window.confirm(t("studyPlan.regenerateConfirm"))) return;
 
     setGenerating(true);
+    setGenerateError(false);
     try {
       const response = await fetch("/api/study-plan", {
         method: "POST",
@@ -68,7 +70,7 @@ export function StudyPlanDashboard({ user }: StudyPlanDashboardProps) {
       if (!response.ok) throw new Error("Failed");
       setData(await response.json());
     } catch {
-      setError(true);
+      setGenerateError(true);
     } finally {
       setGenerating(false);
     }
@@ -132,6 +134,7 @@ export function StudyPlanDashboard({ user }: StudyPlanDashboardProps) {
       <GeneratePlanButton
         loading={generating}
         hasPlan={false}
+        error={generateError}
         onGenerate={() => void handleGenerate()}
       />
     );

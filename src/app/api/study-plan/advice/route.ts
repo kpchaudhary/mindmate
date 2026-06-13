@@ -4,8 +4,12 @@ import { studyPlanAdviceRequestSchema } from "@/lib/ai/schemas";
 import { isSessionUser, requireSession } from "@/lib/auth/require-session";
 import { getActiveStudyPlan, getInsightsData, getUserById } from "@/lib/db/repositories";
 import type { Language } from "@/lib/db/schema";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
 export async function POST(request: Request) {
+  const rateLimited = enforceRateLimit(request, "study-plan:advice", RATE_LIMITS.aiWrite.limit, RATE_LIMITS.aiWrite.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;

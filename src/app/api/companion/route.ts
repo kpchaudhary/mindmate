@@ -4,14 +4,19 @@ import { generateCompanionReply } from "@/lib/ai/gemini";
 import { isSessionUser, requireSession } from "@/lib/auth/require-session";
 import {
   getChatHistory,
-  getInsightsData,
   getLatestAnalysisSummary,
+  getRecentJournalContext,
+  getTopTriggerForUser,
   getUserById,
   saveChatMessage,
 } from "@/lib/db/repositories";
 import { getPromptChips } from "@/lib/i18n/translations";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
 export async function POST(request: Request) {
+  const rateLimited = enforceRateLimit(request, "companion:post", RATE_LIMITS.aiWrite.limit, RATE_LIMITS.aiWrite.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;
@@ -30,25 +35,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Profile incomplete" }, { status: 400 });
     }
 
-    const [chatHistory, insights, latestAnalysis] = await Promise.all([
+    const [chatHistory, recentEntries, topTrigger, latestAnalysis] = await Promise.all([
       getChatHistory(sessionResult.id, 20),
-      getInsightsData(sessionResult.id),
+      getRecentJournalContext(sessionResult.id, 3),
+      getTopTriggerForUser(sessionResult.id),
       getLatestAnalysisSummary(sessionResult.id),
     ]);
 
     await saveChatMessage(sessionResult.id, "user", message);
 
-    const recentTriggers = insights.entries
-      .slice(0, 3)
-      .flatMap((e) => (e.triggers as string[]) ?? []);
+    const recentTriggers = recentEntries.flatMap((e) => (e.triggers as string[]) ?? []);
 
     const reply = await generateCompanionReply({
       studentName: user.name,
       examType: user.examType,
       message,
       recentTriggers,
-      topTrigger: insights.topTrigger?.name ?? null,
-      burnoutLevel: latestAnalysis?.burnoutLevel ?? insights.recentBurnout,
+      topTrigger: topTrigger?.name ?? null,
+      burnoutLevel: latestAnalysis?.burnoutLevel ?? "low",
       recentRecommendation: latestAnalysis?.recommendation ?? null,
       chatHistory: chatHistory.map((m) => ({
         role: m.role as "user" | "assistant",
@@ -74,9 +78,9 @@ export async function GET() {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;
 
-    const [chatHistory, insights, user] = await Promise.all([
+    const [chatHistory, topTrigger, user] = await Promise.all([
       getChatHistory(sessionResult.id, 50),
-      getInsightsData(sessionResult.id),
+      getTopTriggerForUser(sessionResult.id),
       getUserById(sessionResult.id),
     ]);
 
@@ -89,8 +93,8 @@ export async function GET() {
         content: m.content,
         createdAt: m.createdAt.toISOString(),
       })),
-      topTrigger: insights.topTrigger?.name ?? null,
-      promptChips: getPromptChips(insights.topTrigger?.name ?? null, language),
+      topTrigger: topTrigger?.name ?? null,
+      promptChips: getPromptChips(topTrigger?.name ?? null, language),
     });
   } catch (error) {
     console.error("Companion history error:", error);

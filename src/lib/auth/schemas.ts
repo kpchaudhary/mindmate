@@ -14,7 +14,10 @@ const avatarUrlField = z
   .union([z.string().trim().url().max(2048), z.literal("")])
   .optional()
   .nullable()
-  .transform((value) => (value === "" ? null : value));
+  .transform((value) => (value === "" ? null : value))
+  .refine((value) => value === null || value === undefined || value.startsWith("https://"), {
+    message: "Avatar URL must use HTTPS",
+  });
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(80),

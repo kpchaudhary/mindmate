@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { generateWeeklySummary, generateMoodSummary } from "@/lib/ai/gemini";
+import { getCachedMoodSummary, getCachedWeeklySummary } from "@/lib/ai/insights-summaries";
 import { isSessionUser, requireSession } from "@/lib/auth/require-session";
 import { getInsightsData, getUserById } from "@/lib/db/repositories";
 import { getPromptChips } from "@/lib/i18n/translations";
 import type { Language } from "@/lib/db/schema";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const rateLimited = enforceRateLimit(request, "insights:get", RATE_LIMITS.aiRead.limit, RATE_LIMITS.aiRead.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;
@@ -24,7 +28,7 @@ export async function GET() {
       insights.recentWeekEntries.length >= 2
     ) {
       try {
-        weeklySummary = await generateWeeklySummary({
+        weeklySummary = await getCachedWeeklySummary(sessionResult.id, {
           studentName: user.name,
           examType: user.examType,
           entries: insights.recentWeekEntries.map((e) => ({
@@ -43,7 +47,7 @@ export async function GET() {
       }
 
       try {
-        moodSummary = await generateMoodSummary({
+        moodSummary = await getCachedMoodSummary(sessionResult.id, {
           studentName: user.name,
           examType: user.examType,
           moodTimeline: insights.moodTimeline,
@@ -68,24 +72,31 @@ export async function GET() {
         )
       : null;
 
-    return NextResponse.json({
-      triggerFrequency: insights.triggerFrequency,
-      moodTimeline: insights.moodTimeline,
-      burnoutTrend: insights.burnoutTrend,
-      mockScoreCorrelation: insights.mockScoreCorrelation,
-      topTrigger: insights.topTrigger,
-      recentBurnout: insights.recentBurnout,
-      confidenceTrend: insights.confidenceTrend,
-      totalEntries: insights.totalEntries,
-      entries: insights.entries.map((e) => ({ burnoutReasoning: e.burnoutReasoning })),
-      weeklySummary,
-      moodInsights: insights.moodInsights,
-      moodSummary,
-      daysToExam,
-      streakCount: user?.streakCount ?? 0,
-      examDate: user?.examDate?.toISOString() ?? null,
-      promptChips: getPromptChips(insights.topTrigger?.name ?? null, language),
-    });
+    return NextResponse.json(
+      {
+        triggerFrequency: insights.triggerFrequency,
+        moodTimeline: insights.moodTimeline,
+        burnoutTrend: insights.burnoutTrend,
+        mockScoreCorrelation: insights.mockScoreCorrelation,
+        topTrigger: insights.topTrigger,
+        recentBurnout: insights.recentBurnout,
+        confidenceTrend: insights.confidenceTrend,
+        totalEntries: insights.totalEntries,
+        entries: insights.entries.map((e) => ({ burnoutReasoning: e.burnoutReasoning })),
+        weeklySummary,
+        moodInsights: insights.moodInsights,
+        moodSummary,
+        daysToExam,
+        streakCount: user?.streakCount ?? 0,
+        examDate: user?.examDate?.toISOString() ?? null,
+        promptChips: getPromptChips(insights.topTrigger?.name ?? null, language),
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60",
+        },
+      }
+    );
   } catch (error) {
     console.error("Insights error:", error);
     return NextResponse.json({ error: "Failed to fetch insights" }, { status: 500 });

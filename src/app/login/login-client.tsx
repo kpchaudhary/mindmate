@@ -7,16 +7,15 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { LoadingScreen } from "@/components/loading-screen";
 import { isProfileComplete, type SessionUser } from "@/lib/auth/types";
+import { resolveRedirectPath } from "@/lib/safe-redirect";
 
 function getRedirectPath(user: SessionUser, redirect: string | null): string {
   if (!isProfileComplete(user)) return "/onboarding";
-  if (redirect && redirect.startsWith("/") && !redirect.startsWith("/login") && !redirect.startsWith("/register")) {
-    return redirect;
-  }
-  return "/insights";
+  return resolveRedirectPath(redirect, "/insights");
 }
 
 export default function LoginPageClient() {
@@ -110,9 +109,8 @@ export default function LoginPageClient() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

@@ -80,9 +80,15 @@ export function AppShell({ children }: AppShellProps) {
         <LanguageProvider language={user.language as Language}>
           <ReminderScheduler user={user} />
           <ServiceWorkerRegister />
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+          >
+            Skip to main content
+          </a>
           <div className="min-h-screen bg-background">
             <AppNav user={user} onUserUpdate={handleUserUpdate} />
-            <main className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
+            <main id="main" className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
               <PageTransition>{children}</PageTransition>
             </main>
           </div>

@@ -1,12 +1,12 @@
 "use client";
 
-import { AppShell, useUser } from "@/components/app-shell";
+import { useUser } from "@/components/app-shell";
 import {
   StudyPlanDashboard,
   StudyPlanHeader,
 } from "@/features/study-plan/study-plan-dashboard";
 
-function StudyPlanContent() {
+export default function StudyPlanPage() {
   const user = useUser();
 
   return (
@@ -14,13 +14,5 @@ function StudyPlanContent() {
       <StudyPlanHeader user={user} />
       <StudyPlanDashboard user={user} />
     </>
-  );
-}
-
-export default function StudyPlanPage() {
-  return (
-    <AppShell>
-      <StudyPlanContent />
-    </AppShell>
   );
 }

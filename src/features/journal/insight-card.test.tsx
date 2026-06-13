@@ -25,11 +25,22 @@ const baseInsight = {
 };
 
 describe("InsightCard", () => {
-  it("renders mood and burnout insight", () => {
+  it("renders all six required journal outputs plus burnout", () => {
     render(<InsightCard insight={baseInsight} />);
+
     expect(screen.getByText(/Mood: Anxious but hopeful/i)).toBeInTheDocument();
     expect(screen.getByText("Emotional Patterns")).toBeInTheDocument();
+    expect(screen.getByText(/Overthinking/i)).toBeInTheDocument();
+    expect(screen.getByText("Stress Triggers")).toBeInTheDocument();
+    expect(screen.getByText(/exam anxiety/i)).toBeInTheDocument();
+    expect(screen.getByText("Coping Strategy")).toBeInTheDocument();
+    expect(screen.getByText("Take a short walk")).toBeInTheDocument();
+    expect(screen.getByText("Motivation")).toBeInTheDocument();
+    expect(screen.getByText("You are making progress")).toBeInTheDocument();
+    expect(screen.getByText("Wellness Recommendation")).toBeInTheDocument();
+    expect(screen.getByText("Sleep earlier tonight")).toBeInTheDocument();
     expect(screen.getByText("Burnout Risk")).toBeInTheDocument();
+    expect(screen.getByText(/Long study hours without breaks/i)).toBeInTheDocument();
   });
 
   it("shows safety banner when riskFlag is true", () => {

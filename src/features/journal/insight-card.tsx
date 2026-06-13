@@ -20,9 +20,10 @@ export type InsightData = {
 
 type InsightCardProps = {
   insight: InsightData;
+  heading?: string;
 };
 
-export function InsightCard({ insight }: InsightCardProps) {
+export function InsightCard({ insight, heading = "Today's AI Insight" }: InsightCardProps) {
   const reducedMotion = useReducedMotion();
 
   const content = (
@@ -33,7 +34,7 @@ export function InsightCard({ insight }: InsightCardProps) {
         <div className="bg-gradient-purple px-6 py-4 text-primary-foreground">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" aria-hidden="true" />
-            <CardTitle className="text-lg text-primary-foreground">Today&apos;s AI Insight</CardTitle>
+            <CardTitle className="text-lg text-primary-foreground">{heading}</CardTitle>
           </div>
           <p className="mt-1 text-sm opacity-90">Mood: {insight.mood}</p>
         </div>

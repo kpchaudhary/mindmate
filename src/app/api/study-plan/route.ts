@@ -10,6 +10,7 @@ import {
   startOfWeek,
 } from "@/lib/db/repositories";
 import type { Language } from "@/lib/db/schema";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
 function serializePlan(result: NonNullable<Awaited<ReturnType<typeof getActiveStudyPlan>>>) {
   const doneCount = result.items.filter((item) => item.status === "done").length;
@@ -59,6 +60,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rateLimited = enforceRateLimit(request, "study-plan:post", RATE_LIMITS.aiWrite.limit, RATE_LIMITS.aiWrite.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;

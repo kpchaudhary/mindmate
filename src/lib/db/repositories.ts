@@ -1,4 +1,4 @@
-import { eq, desc, and, asc } from "drizzle-orm";
+import { eq, desc, and, asc, gte } from "drizzle-orm";
 import { getDb } from "./index";
 import {
   buildConfidenceTrend,
@@ -235,7 +235,16 @@ export async function getTriggerFrequency(userId: string) {
   );
 }
 
-export async function getInsightsData(userId: string) {
+export async function getTopTriggerForUser(userId: string) {
+  const triggerFrequency = await getTriggerFrequency(userId);
+  return pickTopTrigger(triggerFrequency);
+}
+
+export async function getInsightsData(userId: string, options?: { daysLimit?: number }) {
+  const daysLimit = options?.daysLimit ?? 90;
+  const since = new Date();
+  since.setDate(since.getDate() - daysLimit);
+
   const entries = await getDb()
     .select({
       id: journalEntries.id,
@@ -253,10 +262,12 @@ export async function getInsightsData(userId: string) {
     })
     .from(journalEntries)
     .innerJoin(analyses, eq(analyses.entryId, journalEntries.id))
-    .where(eq(journalEntries.userId, userId))
+    .where(and(eq(journalEntries.userId, userId), gte(journalEntries.createdAt, since)))
     .orderBy(desc(journalEntries.createdAt));
 
-  const triggerFrequency = await getTriggerFrequency(userId);
+  const triggerFrequency = computeTriggerFrequency(
+    entries.map((entry) => ({ triggers: (entry.triggers as string[]) ?? null }))
+  );
 
   const moodTimeline = buildMoodTimeline(
     entries.map((entry) => ({

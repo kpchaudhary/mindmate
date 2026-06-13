@@ -1,6 +1,6 @@
 "use client";
 
-import { AppShell, useUser } from "@/components/app-shell";
+import { useUser } from "@/components/app-shell";
 import { DashboardHeader, InsightsDashboard } from "@/features/insights/insights-dashboard";
 
 function InsightsContent() {
@@ -14,9 +14,5 @@ function InsightsContent() {
 }
 
 export default function InsightsPage() {
-  return (
-    <AppShell>
-      <InsightsContent />
-    </AppShell>
-  );
+  return <InsightsContent />;
 }

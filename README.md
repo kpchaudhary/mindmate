@@ -85,7 +85,15 @@ CI runs lint, unit tests, and E2E (with a Postgres service container) on every p
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/api/onboarding` | POST | Create user profile |
-| `/api/journal` | POST | Analyze journal + persist |
-| `/api/insights` | GET | Aggregated trends |
-| `/api/companion` | POST/GET | Chat + history |
+| `/api/auth/register` | POST | Create account |
+| `/api/auth/login` | POST | Sign in |
+| `/api/auth/logout` | POST | Sign out |
+| `/api/auth/session` | GET | Current session |
+| `/api/auth/change-password` | POST | Update password |
+| `/api/user` | PATCH | Update profile / onboarding |
+| `/api/journal` | GET, POST | List entries / analyze journal |
+| `/api/insights` | GET | Aggregated trends + AI summaries |
+| `/api/companion` | GET, POST | Chat history + send message |
+| `/api/study-plan` | GET, POST | Active plan / generate plan |
+| `/api/study-plan/items` | PATCH, POST, DELETE | Manage plan items |
+| `/api/study-plan/advice` | POST | AI study advice |

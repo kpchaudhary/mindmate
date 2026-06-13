@@ -10,6 +10,7 @@ import {
   getUserById,
   updateStreakOnJournal,
 } from "@/lib/db/repositories";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
 export async function GET() {
   try {
@@ -18,25 +19,32 @@ export async function GET() {
 
     const entries = await getJournalEntriesForUser(sessionResult.id);
 
-    return NextResponse.json({
-      entries: entries.map((entry) => ({
-        id: entry.id,
-        content: entry.content,
-        moodScore: entry.moodScore,
-        createdAt: entry.createdAt.toISOString(),
-        analysis: {
-          mood: entry.mood,
-          emotionalPatterns: entry.emotions,
-          stressTriggers: entry.triggers,
-          copingStrategy: entry.copingStrategy,
-          motivation: entry.motivation,
-          wellnessRecommendation: entry.recommendation,
-          burnoutLevel: entry.burnoutLevel,
-          burnoutReasoning: entry.burnoutReasoning,
-          riskFlag: entry.riskFlag,
+    return NextResponse.json(
+      {
+        entries: entries.map((entry) => ({
+          id: entry.id,
+          content: entry.content,
+          moodScore: entry.moodScore,
+          createdAt: entry.createdAt.toISOString(),
+          analysis: {
+            mood: entry.mood,
+            emotionalPatterns: entry.emotions,
+            stressTriggers: entry.triggers,
+            copingStrategy: entry.copingStrategy,
+            motivation: entry.motivation,
+            wellnessRecommendation: entry.recommendation,
+            burnoutLevel: entry.burnoutLevel,
+            burnoutReasoning: entry.burnoutReasoning,
+            riskFlag: entry.riskFlag,
+          },
+        })),
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60",
         },
-      })),
-    });
+      }
+    );
   } catch (error) {
     console.error("Journal fetch error:", error);
     return NextResponse.json({ error: "Failed to fetch journal entries" }, { status: 500 });
@@ -44,6 +52,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rateLimited = enforceRateLimit(request, "journal:post", RATE_LIMITS.aiWrite.limit, RATE_LIMITS.aiWrite.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const sessionResult = await requireSession();
     if (!isSessionUser(sessionResult)) return sessionResult;

@@ -14,7 +14,7 @@ export function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <Card className="border-destructive/30">
+    <Card className="border-destructive/30" role="alert">
       <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
         <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
         <div className="space-y-1">

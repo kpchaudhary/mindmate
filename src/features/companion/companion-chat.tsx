@@ -9,6 +9,8 @@ import {
   ChatMessageList,
   type ChatMessage,
 } from "@/features/companion/chat-message-list";
+import { UserAvatar } from "@/components/user-avatar";
+import { apiFetch } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/language-context";
 import type { SessionUser } from "@/lib/auth/types";
 
@@ -66,15 +68,14 @@ export function CompanionChat({ user }: CompanionChatProps) {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/companion", {
+      const data = await apiFetch<{
+        id: string;
+        message: string;
+      }>("/api/companion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
       });
-
-      if (!response.ok) throw new Error("Failed");
-
-      const data = (await response.json()) as { id: string; message: string };
       setMessages((prev) => [
         ...prev,
         { id: data.id, role: "assistant", content: data.message },
@@ -88,6 +89,12 @@ export function CompanionChat({ user }: CompanionChatProps) {
 
   const emptyState = (
     <div className="rounded-lg border border-dashed p-6 text-center space-y-4">
+      <UserAvatar
+        name={user.name}
+        avatarUrl={user.avatarUrl}
+        className="mx-auto h-12 w-12"
+        fallbackClassName="text-sm"
+      />
       <p className="text-sm text-muted-foreground">
         Hi {user.name}! {t("companion.empty")}
       </p>
@@ -126,13 +133,13 @@ export function CompanionChat({ user }: CompanionChatProps) {
           {networkError && (
             <Alert variant="destructive">
               <AlertDescription className="flex items-center justify-between gap-2">
-                <span>Could not send message. Please try again.</span>
+                <span>{t("companion.sendError")}</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setNetworkError(false)}
                 >
-                  Dismiss
+                  {t("companion.dismiss")}
                 </Button>
               </AlertDescription>
             </Alert>

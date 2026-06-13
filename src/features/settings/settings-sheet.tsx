@@ -134,6 +134,8 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
                     type="button"
                     variant={reminderEnabled ? "default" : "outline"}
                     size="sm"
+                    role="switch"
+                    aria-checked={reminderEnabled}
                     onClick={() => setReminderEnabled(!reminderEnabled)}
                   >
                     {reminderEnabled ? "On" : "Off"}
@@ -163,14 +165,16 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
             <Separator />
 
             <div className="space-y-3">
-              <Label>Theme</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <Label id="settings-theme-label">Theme</Label>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="settings-theme-label">
                 {themeOptions.map(({ value, label, icon }) => (
                   <Button
                     key={value}
                     variant={theme === value ? "default" : "outline"}
                     size="sm"
                     className="flex flex-col gap-1 h-auto py-2"
+                    role="radio"
+                    aria-checked={theme === value}
                     onClick={() => setTheme(value)}
                   >
                     {icon}

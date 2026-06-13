@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const journalFixture = {
   entryId: "e2e-entry-1",
@@ -189,4 +190,10 @@ test("demo flow: register → onboarding → journal → insights → companion"
   await expect(
     page.getByText(/Exam anxiety has come up in your journals/i)
   ).toBeVisible();
+
+  for (const path of ["/login", "/journal", "/insights", "/companion"]) {
+    await page.goto(path === "/login" ? "/login" : path);
+    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+    expect(accessibilityScanResults.violations).toEqual([]);
+  }
 });

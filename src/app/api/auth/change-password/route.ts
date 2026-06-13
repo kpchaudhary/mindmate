@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { changePasswordSchema } from "@/lib/auth/schemas";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { isSessionUser, requireSession } from "@/lib/auth/require-session";
-import { getUserById, updateUserPassword } from "@/lib/db/repositories";
+import { createUserSession } from "@/lib/auth/session";
+import { deleteSessionsForUser, getUserById, updateUserPassword } from "@/lib/db/repositories";
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,8 @@ export async function POST(request: Request) {
 
     const passwordHash = await hashPassword(newPassword);
     await updateUserPassword(sessionResult.id, passwordHash);
+    await deleteSessionsForUser(sessionResult.id);
+    await createUserSession(sessionResult.id);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

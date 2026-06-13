@@ -12,14 +12,20 @@ vi.mock("@/lib/auth/password", () => ({
   verifyPassword: vi.fn(async (password: string) => password === "correct-password"),
 }));
 
+vi.mock("@/lib/auth/session", () => ({
+  createUserSession: vi.fn(),
+}));
+
 vi.mock("@/lib/db/repositories", () => ({
   getUserById: vi.fn(),
   updateUserPassword: vi.fn(),
+  deleteSessionsForUser: vi.fn(),
 }));
 
 import { requireSession } from "@/lib/auth/require-session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
-import { getUserById, updateUserPassword } from "@/lib/db/repositories";
+import { createUserSession } from "@/lib/auth/session";
+import { deleteSessionsForUser, getUserById, updateUserPassword } from "@/lib/db/repositories";
 
 describe("POST /api/auth/change-password", () => {
   beforeEach(() => {
@@ -112,6 +118,8 @@ describe("POST /api/auth/change-password", () => {
     expect(response.status).toBe(200);
     expect(hashPassword).toHaveBeenCalledWith("newpassword123");
     expect(updateUserPassword).toHaveBeenCalledWith("user-1", "hashed:newpassword123");
+    expect(deleteSessionsForUser).toHaveBeenCalledWith("user-1");
+    expect(createUserSession).toHaveBeenCalledWith("user-1");
     const body = await response.json();
     expect(body.ok).toBe(true);
   });

@@ -20,6 +20,12 @@ type BurnoutGaugeProps = {
   className?: string;
 };
 
+const BURNOUT_VALUES = {
+  low: 1,
+  medium: 2,
+  high: 3,
+} as const;
+
 export function BurnoutGauge({ level, reasoning, className }: BurnoutGaugeProps) {
   return (
     <div className={cn("space-y-3", className)}>
@@ -27,7 +33,14 @@ export function BurnoutGauge({ level, reasoning, className }: BurnoutGaugeProps)
         <span className="text-sm font-medium">Burnout Risk</span>
         <span className="text-sm capitalize text-muted-foreground">{level}</span>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
+      <div
+        className="h-3 w-full overflow-hidden rounded-full bg-secondary"
+        role="meter"
+        aria-valuemin={1}
+        aria-valuemax={3}
+        aria-valuenow={BURNOUT_VALUES[level]}
+        aria-label={`Burnout risk: ${level}`}
+      >
         <div
           className={cn(
             "h-full rounded-full transition-all duration-700",

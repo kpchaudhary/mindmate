@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+
+  useEffect(() => {
+    if (mode !== "read") return;
+    setName(user.name);
+    setExamType(user.examType as ExamType);
+    setExamDate(user.examDate ? user.examDate.slice(0, 10) : "");
+    setAvatarUrl(user.avatarUrl ?? "");
+  }, [user, mode]);
 
   function startEditing() {
     setName(user.name);

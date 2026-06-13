@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpen,
   CalendarCheck,
   LayoutDashboard,
+  LogOut,
   MessageCircle,
   Settings,
   Sparkles,
@@ -84,8 +85,14 @@ function NavLink({
 
 export function AppNav({ user, onUserUpdate }: AppNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { t } = useLanguage();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+  }
 
   const navItems = NAV_HREFS.map((item) => ({ ...item, label: t(item.key) }));
 
@@ -135,8 +142,9 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
                 {t("settings.title")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                Sign out via settings
+              <DropdownMenuItem onClick={() => void handleLogout()}>
+                <LogOut className="h-4 w-4" />
+                Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

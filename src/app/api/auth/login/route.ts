@@ -4,8 +4,12 @@ import { verifyPassword } from "@/lib/auth/password";
 import { createUserSession } from "@/lib/auth/session";
 import { toSessionUser } from "@/lib/auth/types";
 import { getUserByEmail } from "@/lib/db/repositories";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/enforce-rate-limit";
 
 export async function POST(request: Request) {
+  const rateLimited = enforceRateLimit(request, "auth:login", RATE_LIMITS.auth.limit, RATE_LIMITS.auth.windowMs);
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);

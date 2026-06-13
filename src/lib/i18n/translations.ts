@@ -28,6 +28,7 @@ export type TranslationKey =
   | "dashboard.openCompanion"
   | "dashboard.emptyWelcome"
   | "dashboard.emptyDescription"
+  | "dashboard.loadError"
   | "journal.title"
   | "journal.description"
   | "journal.moodToday"
@@ -56,10 +57,19 @@ export type TranslationKey =
   | "journal.historyError"
   | "journal.oneEntry"
   | "journal.entryCount"
+  | "journal.analyzeError"
+  | "journal.yourEntry"
+  | "journal.entryInsight"
+  | "journal.burnoutLow"
+  | "journal.burnoutMedium"
+  | "journal.burnoutHigh"
+  | "journal.riskAlert"
   | "companion.title"
   | "companion.subtitle"
   | "companion.placeholder"
   | "companion.empty"
+  | "companion.sendError"
+  | "companion.dismiss"
   | "settings.title"
   | "settings.examDate"
   | "settings.examDateHint"
@@ -135,6 +145,7 @@ export type TranslationKey =
   | "studyPlan.advicePlaceholder"
   | "studyPlan.adviceError"
   | "studyPlan.loadError"
+  | "studyPlan.generateError"
 
 const en: Record<TranslationKey, string> = {
   "nav.dashboard": "Dashboard",
@@ -165,6 +176,7 @@ const en: Record<TranslationKey, string> = {
   "dashboard.emptyWelcome": "Welcome to your dashboard",
   "dashboard.emptyDescription":
     "Once you submit your first journal entry, MindMate will surface mood trends, stress patterns, and burnout estimates here.",
+  "dashboard.loadError": "Could not load your dashboard. Check your connection and try again.",
   "journal.title": "Daily Check-in",
   "journal.description":
     "Share how you're feeling today. MindMate will uncover patterns standard trackers miss.",
@@ -195,11 +207,20 @@ const en: Record<TranslationKey, string> = {
   "journal.historyError": "Could not load your journal history.",
   "journal.oneEntry": "1 journal entry",
   "journal.entryCount": "{count} journal entries",
+  "journal.analyzeError": "Could not analyze your journal. Please try again.",
+  "journal.yourEntry": "Your entry",
+  "journal.entryInsight": "AI insight",
+  "journal.burnoutLow": "Low burnout",
+  "journal.burnoutMedium": "Medium burnout",
+  "journal.burnoutHigh": "High burnout",
+  "journal.riskAlert": "Alert",
   "companion.title": "MindMate Companion",
   "companion.subtitle": "Context-aware support for your",
   "companion.placeholder": "I'm anxious about tomorrow's mock test...",
   "companion.empty":
     "I'm here whenever prep feels overwhelming. Ask me for a coping strategy, a quick mindfulness exercise, or just vent about today.",
+  "companion.sendError": "Could not send message. Please try again.",
+  "companion.dismiss": "Dismiss",
   "settings.title": "Settings",
   "settings.examDate": "Exam date",
   "settings.examDateHint": "Optional — enables countdown on dashboard",
@@ -276,6 +297,7 @@ const en: Record<TranslationKey, string> = {
   "studyPlan.advicePlaceholder": "I feel burned out today...",
   "studyPlan.adviceError": "Could not get plan advice. Try again.",
   "studyPlan.loadError": "Could not load your study plan.",
+  "studyPlan.generateError": "Could not generate your study plan. Please try again.",
 };
 
 const hi: Record<TranslationKey, string> = {
@@ -307,6 +329,7 @@ const hi: Record<TranslationKey, string> = {
   "dashboard.emptyWelcome": "आपके डैशबोर्ड में स्वागत है",
   "dashboard.emptyDescription":
     "पहली जर्नल एंट्री के बाद, MindMate यहाँ मूड ट्रेंड, तनाव पैटर्न और बर्नआउट दिखाएगा।",
+  "dashboard.loadError": "डैशबोर्ड लोड नहीं हो सका। कनेक्शन जांचें और फिर कोशिश करें।",
   "journal.title": "दैनिक चेक-इन",
   "journal.description":
     "आज आप कैसा महसूस कर रहे हैं, बताएं। MindMate वो पैटर्न खोजेगा जो सामान्य ट्रैकर नहीं देखते।",
@@ -337,11 +360,20 @@ const hi: Record<TranslationKey, string> = {
   "journal.historyError": "जर्नल इतिहास लोड नहीं हो सका।",
   "journal.oneEntry": "1 जर्नल एंट्री",
   "journal.entryCount": "{count} जर्नल एंट्री",
+  "journal.analyzeError": "जर्नल विश्लेषण नहीं हो सका। फिर कोशिश करें।",
+  "journal.yourEntry": "आपकी एंट्री",
+  "journal.entryInsight": "AI विश्लेषण",
+  "journal.burnoutLow": "कम burnout",
+  "journal.burnoutMedium": "मध्यम burnout",
+  "journal.burnoutHigh": "उच्च burnout",
+  "journal.riskAlert": "चेतावनी",
   "companion.title": "MindMate साथी",
   "companion.subtitle": "आपकी",
   "companion.placeholder": "कल के mock test को लेकर चिंता है...",
   "companion.empty":
     "जब भी प्रेप भारी लगे, मैं यहाँ हूँ। coping strategy, mindfulness exercise, या बस आज की बात — कुछ भी पूछें।",
+  "companion.sendError": "मैसेज नहीं भेजा जा सका। फिर कोशिश करें।",
+  "companion.dismiss": "बंद करें",
   "settings.title": "सेटिंग्स",
   "settings.examDate": "एग्जाम की तारीख",
   "settings.examDateHint": "वैकल्पिक — डैशबोर्ड पर काउंटडाउन दिखेगा",
@@ -418,6 +450,7 @@ const hi: Record<TranslationKey, string> = {
   "studyPlan.advicePlaceholder": "आज बहुत burnout feel हो रहा है...",
   "studyPlan.adviceError": "प्लान advice नहीं मिली। फिर कोशिश करें।",
   "studyPlan.loadError": "स्टडी प्लान लोड नहीं हो सका।",
+  "studyPlan.generateError": "स्टडी प्लान नहीं बन सका। फिर कोशिश करें।",
 };
 
 const translations: Record<Language, Record<TranslationKey, string>> = { en, hi };

@@ -13,7 +13,8 @@ vi.mock("@/lib/ai/gemini", () => ({
 
 vi.mock("@/lib/db/repositories", () => ({
   getChatHistory: vi.fn(),
-  getInsightsData: vi.fn(),
+  getRecentJournalContext: vi.fn(),
+  getTopTriggerForUser: vi.fn(),
   getLatestAnalysisSummary: vi.fn(),
   getUserById: vi.fn(),
   saveChatMessage: vi.fn(),
@@ -23,7 +24,8 @@ import { requireSession } from "@/lib/auth/require-session";
 import { generateCompanionReply } from "@/lib/ai/gemini";
 import {
   getChatHistory,
-  getInsightsData,
+  getRecentJournalContext,
+  getTopTriggerForUser,
   getLatestAnalysisSummary,
   getUserById,
   saveChatMessage,
@@ -81,28 +83,8 @@ describe("POST /api/companion", () => {
       createdAt: new Date(),
     });
     vi.mocked(getChatHistory).mockResolvedValue([]);
-    vi.mocked(getInsightsData).mockResolvedValue({
-      entries: [],
-      triggerFrequency: {},
-      moodTimeline: [],
-      burnoutTrend: [],
-      mockScoreCorrelation: [],
-      topTrigger: { name: "exam anxiety", count: 2 },
-      recentBurnout: "medium",
-      confidenceTrend: [],
-      totalEntries: 1,
-      recentWeekEntries: [],
-      moodInsights: {
-        weeklyAverage: 2,
-        priorWeeklyAverage: null,
-        delta: null,
-        direction: "stable",
-        byDayOfWeek: [],
-        topEmotions: [],
-        moodBurnoutCorrelation: { lowBurnoutAvg: null, highBurnoutAvg: null },
-        lowMoodStreak: 0,
-      },
-    });
+    vi.mocked(getRecentJournalContext).mockResolvedValue([]);
+    vi.mocked(getTopTriggerForUser).mockResolvedValue({ name: "exam anxiety", count: 2 });
     vi.mocked(getLatestAnalysisSummary).mockResolvedValue(null);
     vi.mocked(generateCompanionReply).mockResolvedValue("You are not alone in this.");
     vi.mocked(saveChatMessage)
