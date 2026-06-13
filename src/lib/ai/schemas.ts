@@ -46,6 +46,71 @@ export const companionRequestSchema = z.object({
   message: z.string().trim().min(1).max(2000),
 });
 
+export const studyPlanGenerateRequestSchema = z.object({
+  focusNote: z.string().trim().max(500).optional(),
+});
+
+export const studyPlanItemPatchSchema = z.object({
+  id: z.string().uuid(),
+  subject: z.string().trim().min(1).max(100).optional(),
+  topic: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().min(1).max(1000).optional(),
+  durationMinutes: z.number().int().min(15).max(480).optional(),
+  scheduledDate: z.string().datetime().optional(),
+  status: z.enum(["pending", "done"]).optional(),
+});
+
+export const studyPlanItemCreateSchema = z.object({
+  planId: z.string().uuid(),
+  subject: z.string().trim().min(1).max(100),
+  topic: z.string().trim().min(1).max(200),
+  description: z.string().trim().min(1).max(1000),
+  durationMinutes: z.number().int().min(15).max(480),
+  scheduledDate: z.string().datetime(),
+});
+
+export const studyPlanItemDeleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const studyPlanAdviceRequestSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+});
+
+export const studyPlanSchema = z.object({
+  title: z.string().min(1),
+  rationale: z.string().min(1),
+  items: z
+    .array(
+      z.object({
+        subject: z.string().min(1),
+        topic: z.string().min(1),
+        description: z.string().min(1),
+        durationMinutes: z.number().int().min(15).max(480),
+        scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    )
+    .min(3)
+    .max(21),
+});
+
+export type StudyPlanGeneration = z.infer<typeof studyPlanSchema>;
+
+export const studyPlanAdviceSchema = z.object({
+  advice: z.string().min(1),
+  suggestedChanges: z.array(z.string()).min(1).max(5),
+});
+
+export type StudyPlanAdvice = z.infer<typeof studyPlanAdviceSchema>;
+
+export const moodSummarySchema = z.object({
+  patternInsight: z.string().min(1),
+  correlationNote: z.string().min(1),
+  gentleAction: z.string().min(1),
+});
+
+export type MoodSummary = z.infer<typeof moodSummarySchema>;
+
 export const analysisResponseSchema = {
   type: "object",
   properties: {
@@ -79,4 +144,46 @@ export const weeklySummaryResponseSchema = {
     actionableInsight: { type: "string" },
   },
   required: ["summary", "actionableInsight"],
+} as const;
+
+export const studyPlanResponseSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    rationale: { type: "string" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          subject: { type: "string" },
+          topic: { type: "string" },
+          description: { type: "string" },
+          durationMinutes: { type: "integer" },
+          scheduledDate: { type: "string" },
+        },
+        required: ["subject", "topic", "description", "durationMinutes", "scheduledDate"],
+      },
+    },
+  },
+  required: ["title", "rationale", "items"],
+} as const;
+
+export const studyPlanAdviceResponseSchema = {
+  type: "object",
+  properties: {
+    advice: { type: "string" },
+    suggestedChanges: { type: "array", items: { type: "string" } },
+  },
+  required: ["advice", "suggestedChanges"],
+} as const;
+
+export const moodSummaryResponseSchema = {
+  type: "object",
+  properties: {
+    patternInsight: { type: "string" },
+    correlationNote: { type: "string" },
+    gentleAction: { type: "string" },
+  },
+  required: ["patternInsight", "correlationNote", "gentleAction"],
 } as const;

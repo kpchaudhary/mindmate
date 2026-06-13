@@ -92,6 +92,16 @@ describe("POST /api/companion", () => {
       confidenceTrend: [],
       totalEntries: 1,
       recentWeekEntries: [],
+      moodInsights: {
+        weeklyAverage: 2,
+        priorWeeklyAverage: null,
+        delta: null,
+        direction: "stable",
+        byDayOfWeek: [],
+        topEmotions: [],
+        moodBurnoutCorrelation: { lowBurnoutAvg: null, highBurnoutAvg: null },
+        lowMoodStreak: 0,
+      },
     });
     vi.mocked(getLatestAnalysisSummary).mockResolvedValue(null);
     vi.mocked(generateCompanionReply).mockResolvedValue("You are not alone in this.");

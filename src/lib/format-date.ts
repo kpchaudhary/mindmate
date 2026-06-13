@@ -6,6 +6,11 @@ export function formatDate(date: string | Date, style: "short" | "long" = "short
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+export function formatDateLabel(date: string | Date): string {
+  const d = typeof date === "string" ? new Date(`${date.slice(0, 10)}T12:00:00`) : date;
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+
 export function formatRelativeTime(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const diffMs = Date.now() - d.getTime();

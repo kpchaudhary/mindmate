@@ -36,6 +36,21 @@ type InsightsData = {
   totalEntries: number;
   entries: Array<{ burnoutReasoning: string }>;
   weeklySummary: { summary: string; actionableInsight: string } | null;
+  moodInsights: {
+    weeklyAverage: number | null;
+    priorWeeklyAverage: number | null;
+    delta: number | null;
+    direction: "improving" | "stable" | "declining";
+    byDayOfWeek: Array<{ day: string; average: number | null }>;
+    topEmotions: Array<{ emotion: string; count: number }>;
+    moodBurnoutCorrelation: { lowBurnoutAvg: number | null; highBurnoutAvg: number | null };
+    lowMoodStreak: number;
+  };
+  moodSummary: {
+    patternInsight: string;
+    correlationNote: string;
+    gentleAction: string;
+  } | null;
   daysToExam: number | null;
   streakCount: number;
 };
@@ -140,6 +155,13 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
     data.entries[0]?.burnoutReasoning ?? "Based on your recent journal patterns.";
 
   const latestMood = data.moodTimeline[data.moodTimeline.length - 1]?.moodScore ?? null;
+  const moodTrendLabel =
+    data.moodInsights.direction === "improving"
+      ? t("dashboard.moodTrendImproving")
+      : data.moodInsights.direction === "declining"
+        ? t("dashboard.moodTrendDeclining")
+        : t("dashboard.moodTrendStable");
+  const moodByDayChart = data.moodInsights.byDayOfWeek.filter((d) => d.average !== null);
   const yAxisWidth = Math.min(
     160,
     Math.max(80, ...triggerChartData.map((d) => d.name.length * 6))
@@ -198,6 +220,38 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
         </Card>
       </div>
 
+      {data.moodSummary && (
+        <Card className="corners corners-purple border-primary/20">
+          <CardHeader>
+            <div className="flex flex-wrap items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <CardTitle>{t("dashboard.moodInsights")}</CardTitle>
+              {data.moodInsights.weeklyAverage !== null && (
+                <Badge variant="outline">
+                  {t("dashboard.weeklyAverage")}: {data.moodInsights.weeklyAverage}/5 ·{" "}
+                  {moodTrendLabel}
+                </Badge>
+              )}
+            </div>
+            <CardDescription>{data.moodSummary.patternInsight}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg bg-accent/50 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                {t("dashboard.moodCorrelation")}
+              </p>
+              <p className="text-sm">{data.moodSummary.correlationNote}</p>
+            </div>
+            <div className="rounded-lg bg-accent/50 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                {t("dashboard.moodAction")}
+              </p>
+              <p className="text-sm">{data.moodSummary.gentleAction}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {data.weeklySummary && (
         <Card className="corners corners-purple border-primary/20">
           <CardHeader>
@@ -233,6 +287,52 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {moodByDayChart.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.moodByDay")}</CardTitle>
+              <CardDescription>{t("dashboard.moodTrend")}: {moodTrendLabel}</CardDescription>
+            </CardHeader>
+            <CardContent className="h-48 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={moodByDayChart}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                  <YAxis domain={[1, 5]} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="average" fill="hsl(var(--chart-primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {data.moodInsights.topEmotions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.topEmotions")}</CardTitle>
+              <CardDescription>Most frequent emotional patterns from your journals</CardDescription>
+            </CardHeader>
+            <CardContent className="h-48 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.moodInsights.topEmotions.map((e) => ({
+                    name: e.emotion,
+                    count: e.count,
+                  }))}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="hsl(var(--chart-primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>{t("dashboard.moodTimeline")}</CardTitle>

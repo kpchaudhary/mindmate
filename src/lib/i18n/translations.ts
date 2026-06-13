@@ -3,6 +3,7 @@ import type { Language } from "@/lib/db/schema";
 export type TranslationKey =
   | "nav.dashboard"
   | "nav.journal"
+  | "nav.studyPlan"
   | "nav.companion"
   | "nav.profile"
   | "dashboard.greeting"
@@ -43,6 +44,18 @@ export type TranslationKey =
   | "journal.voicePermission"
   | "journal.voiceNoSpeech"
   | "journal.voiceFailed"
+  | "journal.pageSubtitle"
+  | "journal.moodVeryLow"
+  | "journal.moodLow"
+  | "journal.moodOkay"
+  | "journal.moodGood"
+  | "journal.moodGreat"
+  | "journal.placeholder"
+  | "journal.pastEntries"
+  | "journal.emptyHistory"
+  | "journal.historyError"
+  | "journal.oneEntry"
+  | "journal.entryCount"
   | "companion.title"
   | "companion.subtitle"
   | "companion.placeholder"
@@ -78,11 +91,48 @@ export type TranslationKey =
   | "profile.passwordMismatch"
   | "profile.passwordChangeError"
   | "onboarding.examDate"
-  | "onboarding.examDateOptional";
+  | "onboarding.examDateOptional"
+  | "dashboard.moodInsights"
+  | "dashboard.moodTrend"
+  | "dashboard.moodTrendImproving"
+  | "dashboard.moodTrendStable"
+  | "dashboard.moodTrendDeclining"
+  | "dashboard.moodByDay"
+  | "dashboard.topEmotions"
+  | "dashboard.moodPattern"
+  | "dashboard.moodCorrelation"
+  | "dashboard.moodAction"
+  | "dashboard.weeklyAverage"
+  | "studyPlan.title"
+  | "studyPlan.subtitle"
+  | "studyPlan.emptyTitle"
+  | "studyPlan.emptyDescription"
+  | "studyPlan.generate"
+  | "studyPlan.generating"
+  | "studyPlan.regenerate"
+  | "studyPlan.regenerating"
+  | "studyPlan.regenerateConfirm"
+  | "studyPlan.progress"
+  | "studyPlan.tasksDone"
+  | "studyPlan.weekOf"
+  | "studyPlan.aiRationale"
+  | "studyPlan.noTasks"
+  | "studyPlan.editTask"
+  | "studyPlan.subject"
+  | "studyPlan.topic"
+  | "studyPlan.description"
+  | "studyPlan.duration"
+  | "studyPlan.saveTask"
+  | "studyPlan.adviceTitle"
+  | "studyPlan.adviceDescription"
+  | "studyPlan.advicePlaceholder"
+  | "studyPlan.adviceError"
+  | "studyPlan.loadError"
 
 const en: Record<TranslationKey, string> = {
   "nav.dashboard": "Dashboard",
   "nav.journal": "Journal",
+  "nav.studyPlan": "Study Plan",
   "nav.companion": "Companion",
   "nav.profile": "Profile",
   "dashboard.greeting": "Good morning",
@@ -125,6 +175,19 @@ const en: Record<TranslationKey, string> = {
   "journal.voicePermission": "Microphone access denied. Allow mic permission in browser settings.",
   "journal.voiceNoSpeech": "No speech detected. Try again and speak clearly.",
   "journal.voiceFailed": "Voice input failed. Type your journal instead.",
+  "journal.pageSubtitle": "Write freely — MindMate analyzes patterns standard trackers miss.",
+  "journal.moodVeryLow": "Very low",
+  "journal.moodLow": "Low",
+  "journal.moodOkay": "Okay",
+  "journal.moodGood": "Good",
+  "journal.moodGreat": "Great",
+  "journal.placeholder":
+    "I studied for 8 hours but still feel behind. Mock test scores dropped and my parents asked about ranks...",
+  "journal.pastEntries": "Past entries",
+  "journal.emptyHistory": "Your journal history will appear here after your first check-in.",
+  "journal.historyError": "Could not load your journal history.",
+  "journal.oneEntry": "1 journal entry",
+  "journal.entryCount": "{count} journal entries",
   "companion.title": "MindMate Companion",
   "companion.subtitle": "Context-aware support for your",
   "companion.placeholder": "I'm anxious about tomorrow's mock test...",
@@ -162,11 +225,49 @@ const en: Record<TranslationKey, string> = {
   "profile.passwordChangeError": "Could not change password",
   "onboarding.examDate": "When is your exam?",
   "onboarding.examDateOptional": "Optional — you can add this later in settings",
+  "dashboard.moodInsights": "Mood Insights",
+  "dashboard.moodTrend": "Mood trend",
+  "dashboard.moodTrendImproving": "Improving",
+  "dashboard.moodTrendStable": "Stable",
+  "dashboard.moodTrendDeclining": "Declining",
+  "dashboard.moodByDay": "Mood by Day of Week",
+  "dashboard.topEmotions": "Top Emotions",
+  "dashboard.moodPattern": "Pattern discovered",
+  "dashboard.moodCorrelation": "Mood & burnout link",
+  "dashboard.moodAction": "Gentle next step",
+  "dashboard.weeklyAverage": "Weekly average",
+  "studyPlan.title": "Study Plan",
+  "studyPlan.subtitle": "AI-personalized weekly schedule adapted to your mood and burnout",
+  "studyPlan.emptyTitle": "Generate your study plan",
+  "studyPlan.emptyDescription":
+    "MindMate builds a 7-day plan based on your exam, countdown, and wellness patterns.",
+  "studyPlan.generate": "Generate my plan",
+  "studyPlan.generating": "Building your plan...",
+  "studyPlan.regenerate": "Regenerate week",
+  "studyPlan.regenerating": "Regenerating...",
+  "studyPlan.regenerateConfirm": "Replace your current plan with a new AI-generated week?",
+  "studyPlan.progress": "Weekly progress",
+  "studyPlan.tasksDone": "tasks done",
+  "studyPlan.weekOf": "Week of",
+  "studyPlan.aiRationale": "Why this plan",
+  "studyPlan.noTasks": "No tasks in this plan yet.",
+  "studyPlan.editTask": "Edit task",
+  "studyPlan.subject": "Subject",
+  "studyPlan.topic": "Topic",
+  "studyPlan.description": "Description",
+  "studyPlan.duration": "Duration (minutes)",
+  "studyPlan.saveTask": "Save task",
+  "studyPlan.adviceTitle": "Plan adjustment help",
+  "studyPlan.adviceDescription": "Ask MindMate how to adjust today's plan based on how you feel.",
+  "studyPlan.advicePlaceholder": "I feel burned out today...",
+  "studyPlan.adviceError": "Could not get plan advice. Try again.",
+  "studyPlan.loadError": "Could not load your study plan.",
 };
 
 const hi: Record<TranslationKey, string> = {
   "nav.dashboard": "डैशबोर्ड",
   "nav.journal": "जर्नल",
+  "nav.studyPlan": "स्टडी प्लान",
   "nav.companion": "साथी",
   "nav.profile": "प्रोफ़ाइल",
   "dashboard.greeting": "नमस्ते",
@@ -209,6 +310,19 @@ const hi: Record<TranslationKey, string> = {
   "journal.voicePermission": "माइक की permission नहीं मिली। browser settings में allow करें।",
   "journal.voiceNoSpeech": "आवाज़ नहीं सुनाई दी। फिर से बोलें।",
   "journal.voiceFailed": "वॉइस input fail हुआ। टाइप करके लिखें।",
+  "journal.pageSubtitle": "खुलकर लिखें — MindMate वो पैटर्न खोजता है जो सामान्य ट्रैकर नहीं देखते।",
+  "journal.moodVeryLow": "बहुत कम",
+  "journal.moodLow": "कम",
+  "journal.moodOkay": "ठीक",
+  "journal.moodGood": "अच्छा",
+  "journal.moodGreat": "बहुत अच्छा",
+  "journal.placeholder":
+    "8 घंटे पढ़ा लेकिन अभी भी पीछे लग रहा है। Mock scores गिरे और माता-पिता ranks पूछ रहे हैं...",
+  "journal.pastEntries": "पिछली एंट्री",
+  "journal.emptyHistory": "पहली चेक-इन के बाद आपका जर्नल इतिहास यहाँ दिखेगा।",
+  "journal.historyError": "जर्नल इतिहास लोड नहीं हो सका।",
+  "journal.oneEntry": "1 जर्नल एंट्री",
+  "journal.entryCount": "{count} जर्नल एंट्री",
   "companion.title": "MindMate साथी",
   "companion.subtitle": "आपकी",
   "companion.placeholder": "कल के mock test को लेकर चिंता है...",
@@ -246,6 +360,43 @@ const hi: Record<TranslationKey, string> = {
   "profile.passwordChangeError": "पासवर्ड बदल नहीं सके",
   "onboarding.examDate": "आपका एग्जाम कब है?",
   "onboarding.examDateOptional": "वैकल्पिक — बाद में सेटिंग्स में जोड़ सकते हैं",
+  "dashboard.moodInsights": "मूड इनसाइट्स",
+  "dashboard.moodTrend": "मूड ट्रेंड",
+  "dashboard.moodTrendImproving": "सुधर रहा है",
+  "dashboard.moodTrendStable": "स्थिर",
+  "dashboard.moodTrendDeclining": "गिर रहा है",
+  "dashboard.moodByDay": "सप्ताह के दिनों में मूड",
+  "dashboard.topEmotions": "मुख्य भावनाएँ",
+  "dashboard.moodPattern": "पैटर्न मिला",
+  "dashboard.moodCorrelation": "मूड और बर्नआउट संबंध",
+  "dashboard.moodAction": "हल्का अगला कदम",
+  "dashboard.weeklyAverage": "साप्ताहिक औसत",
+  "studyPlan.title": "स्टडी प्लान",
+  "studyPlan.subtitle": "आपके मूड और बर्नआउट के अनुसार AI साप्ताहिक शेड्यूल",
+  "studyPlan.emptyTitle": "अपना स्टडी प्लान बनाएं",
+  "studyPlan.emptyDescription":
+    "MindMate आपके एग्जाम, काउंटडाउन और wellness पैटर्न से 7-दिन का प्लान बनाता है।",
+  "studyPlan.generate": "प्लान बनाएं",
+  "studyPlan.generating": "प्लान बन रहा है...",
+  "studyPlan.regenerate": "हफ्ता दोबारा बनाएं",
+  "studyPlan.regenerating": "दोबारा बन रहा है...",
+  "studyPlan.regenerateConfirm": "मौजूदा प्लान को नए AI प्लान से बदलें?",
+  "studyPlan.progress": "साप्ताहिक प्रगति",
+  "studyPlan.tasksDone": "टास्क पूरे",
+  "studyPlan.weekOf": "हफ्ता",
+  "studyPlan.aiRationale": "यह प्लान क्यों",
+  "studyPlan.noTasks": "इस प्लान में अभी कोई टास्क नहीं।",
+  "studyPlan.editTask": "टास्क संपादित करें",
+  "studyPlan.subject": "विषय",
+  "studyPlan.topic": "टॉपिक",
+  "studyPlan.description": "विवरण",
+  "studyPlan.duration": "अवधि (मिनट)",
+  "studyPlan.saveTask": "टास्क सहेजें",
+  "studyPlan.adviceTitle": "प्लान एडजस्टमेंट मदद",
+  "studyPlan.adviceDescription": "MindMate से पूछें कि आज का प्लान कैसे बदलें।",
+  "studyPlan.advicePlaceholder": "आज बहुत burnout feel हो रहा है...",
+  "studyPlan.adviceError": "प्लान advice नहीं मिली। फिर कोशिश करें।",
+  "studyPlan.loadError": "स्टडी प्लान लोड नहीं हो सका।",
 };
 
 const translations: Record<Language, Record<TranslationKey, string>> = { en, hi };
@@ -280,6 +431,23 @@ export const TRIGGER_PROMPT_CHIPS: Record<string, { en: string; hi: string }> = 
     hi: "Mock scores गिर गए, confidence टूट रहा है",
   },
 };
+
+const JOURNAL_PROMPT_CHIPS: Record<Language, string[]> = {
+  en: [
+    "Studied hard today but still feel behind on syllabus...",
+    "Mock test went worse than expected and I'm losing confidence...",
+    "Feeling guilty about taking a break when everyone else is grinding...",
+  ],
+  hi: [
+    "आज बहुत पढ़ा लेकिन syllabus अभी भी पीछे लग रहा है...",
+    "Mock test उम्मीद से कम गया, confidence टूट रहा है...",
+    "Break लेने पर guilt हो रहा है जब सब grind कर रहे हैं...",
+  ],
+};
+
+export function getJournalPromptChips(language: Language): string[] {
+  return JOURNAL_PROMPT_CHIPS[language];
+}
 
 export function getPromptChips(
   topTrigger: string | null,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateWeeklySummary } from "@/lib/ai/gemini";
+import { generateWeeklySummary, generateMoodSummary } from "@/lib/ai/gemini";
 import { isSessionUser, requireSession } from "@/lib/auth/require-session";
 import { getInsightsData, getUserById } from "@/lib/db/repositories";
 import { getPromptChips } from "@/lib/i18n/translations";
@@ -15,6 +15,8 @@ export async function GET() {
     const language = (user?.language === "hi" ? "hi" : "en") as Language;
 
     let weeklySummary: { summary: string; actionableInsight: string } | null = null;
+    let moodSummary: { patternInsight: string; correlationNote: string; gentleAction: string } | null =
+      null;
 
     if (
       user?.name &&
@@ -39,6 +41,22 @@ export async function GET() {
       } catch (error) {
         console.error("Weekly summary error:", error);
       }
+
+      try {
+        moodSummary = await generateMoodSummary({
+          studentName: user.name,
+          examType: user.examType,
+          moodTimeline: insights.moodTimeline,
+          byDayOfWeek: insights.moodInsights.byDayOfWeek,
+          topEmotions: insights.moodInsights.topEmotions,
+          moodBurnoutCorrelation: insights.moodInsights.moodBurnoutCorrelation,
+          direction: insights.moodInsights.direction,
+          weeklyAverage: insights.moodInsights.weeklyAverage,
+          language,
+        });
+      } catch (error) {
+        console.error("Mood summary error:", error);
+      }
     }
 
     const daysToExam = user?.examDate
@@ -61,6 +79,8 @@ export async function GET() {
       totalEntries: insights.totalEntries,
       entries: insights.entries.map((e) => ({ burnoutReasoning: e.burnoutReasoning })),
       weeklySummary,
+      moodInsights: insights.moodInsights,
+      moodSummary,
       daysToExam,
       streakCount: user?.streakCount ?? 0,
       examDate: user?.examDate?.toISOString() ?? null,

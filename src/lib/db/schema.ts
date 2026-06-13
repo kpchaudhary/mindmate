@@ -14,6 +14,10 @@ export type ExamType = (typeof examTypes)[number];
 
 export const burnoutLevelEnum = pgEnum("burnout_level", ["low", "medium", "high"]);
 
+export const studyPlanStatusEnum = pgEnum("study_plan_status", ["active", "archived"]);
+
+export const studyPlanItemStatusEnum = pgEnum("study_plan_item_status", ["pending", "done"]);
+
 export const languages = ["en", "hi"] as const;
 export type Language = (typeof languages)[number];
 
@@ -72,6 +76,35 @@ export const analyses = pgTable("analyses", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const studyPlans = pgTable("study_plans", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  weekStart: timestamp("week_start", { withTimezone: true }).notNull(),
+  aiRationale: text("ai_rationale").notNull(),
+  status: studyPlanStatusEnum("status").default("active").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const studyPlanItems = pgTable("study_plan_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => studyPlans.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  topic: text("topic").notNull(),
+  description: text("description").notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  scheduledDate: timestamp("scheduled_date", { withTimezone: true }).notNull(),
+  status: studyPlanItemStatusEnum("status").default("pending").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  isUserEdited: boolean("is_user_edited").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const chatMessages = pgTable("chat_messages", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
@@ -86,6 +119,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   journalEntries: many(journalEntries),
   chatMessages: many(chatMessages),
   sessions: many(sessions),
+  studyPlans: many(studyPlans),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -113,7 +147,24 @@ export const analysesRelations = relations(analyses, ({ one }) => ({
   }),
 }));
 
+export const studyPlansRelations = relations(studyPlans, ({ one, many }) => ({
+  user: one(users, {
+    fields: [studyPlans.userId],
+    references: [users.id],
+  }),
+  items: many(studyPlanItems),
+}));
+
+export const studyPlanItemsRelations = relations(studyPlanItems, ({ one }) => ({
+  plan: one(studyPlans, {
+    fields: [studyPlanItems.planId],
+    references: [studyPlans.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type JournalEntry = typeof journalEntries.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type StudyPlan = typeof studyPlans.$inferSelect;
+export type StudyPlanItem = typeof studyPlanItems.$inferSelect;

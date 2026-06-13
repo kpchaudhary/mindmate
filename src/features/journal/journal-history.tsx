@@ -1,16 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/error-state";
 import { InsightCard, type InsightData } from "@/features/journal/insight-card";
+import { BURNOUT_BADGE_STYLES, getMoodEmoji } from "@/lib/mood";
 import { formatDate } from "@/lib/format-date";
-
-const MOOD_LABELS = ["Very low", "Low", "Okay", "Good", "Great"];
+import { useLanguage } from "@/lib/i18n/language-context";
+import { cn } from "@/lib/utils";
 
 export type JournalEntryItem = {
   id: string;
@@ -25,6 +26,7 @@ type JournalHistoryProps = {
 };
 
 export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
+  const { t } = useLanguage();
   const [entries, setEntries] = useState<JournalEntryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -49,11 +51,19 @@ export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
     void load();
   }, [load, refreshKey]);
 
+  const entryCountLabel =
+    entries.length === 1
+      ? t("journal.oneEntry")
+      : t("journal.entryCount").replace("{count}", String(entries.length));
+
   if (loading) {
     return (
-      <Card>
+      <Card className="corners">
         <CardHeader>
-          <CardTitle>Past Entries</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" aria-hidden="true" />
+            {t("journal.pastEntries")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -65,26 +75,39 @@ export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
   }
 
   if (error) {
-    return <ErrorState message="Could not load your journal history." onRetry={() => void load()} />;
+    return (
+      <ErrorState message={t("journal.historyError")} onRetry={() => void load()} />
+    );
   }
 
   if (entries.length === 0) {
     return (
-      <Card>
+      <Card className="corners">
         <CardHeader>
-          <CardTitle>Past Entries</CardTitle>
-          <CardDescription>Your journal history will appear here after your first check-in.</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" aria-hidden="true" />
+            {t("journal.pastEntries")}
+          </CardTitle>
         </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-dashed p-6 text-center">
+            <BookOpen className="mx-auto h-8 w-8 text-muted-foreground/50 mb-3" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">{t("journal.emptyHistory")}</p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <>
-      <Card>
+      <Card className="corners">
         <CardHeader>
-          <CardTitle>Past Entries</CardTitle>
-          <CardDescription>{entries.length} journal {entries.length === 1 ? "entry" : "entries"}</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" aria-hidden="true" />
+            {t("journal.pastEntries")}
+          </CardTitle>
+          <CardDescription>{entryCountLabel}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {entries.map((entry) => (
@@ -92,19 +115,22 @@ export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
               key={entry.id}
               type="button"
               onClick={() => setSelected(entry)}
-              className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent/50"
+              className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent/50 hover:border-primary/30"
             >
+              <span className="text-xl shrink-0" aria-hidden="true">
+                {getMoodEmoji(entry.moodScore)}
+              </span>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-muted-foreground">
                     {formatDate(entry.createdAt)}
                   </span>
-                  <Badge variant="secondary" className="text-xs">
-                    {MOOD_LABELS[entry.moodScore - 1]}
-                  </Badge>
                   <Badge
                     variant="outline"
-                    className="text-xs capitalize"
+                    className={cn(
+                      "text-xs capitalize",
+                      BURNOUT_BADGE_STYLES[entry.analysis.burnoutLevel]
+                    )}
                   >
                     {entry.analysis.burnoutLevel} burnout
                   </Badge>
@@ -120,8 +146,13 @@ export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
       <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <SheetContent className="overflow-y-auto sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>
-              {selected && formatDate(selected.createdAt, "long")}
+            <SheetTitle className="flex items-center gap-2">
+              {selected && (
+                <>
+                  <span aria-hidden="true">{getMoodEmoji(selected.moodScore)}</span>
+                  {formatDate(selected.createdAt, "long")}
+                </>
+              )}
             </SheetTitle>
           </SheetHeader>
           {selected && (

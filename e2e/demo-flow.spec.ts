@@ -47,6 +47,29 @@ const insightsFixture = {
   totalEntries: 1,
   entries: [{ burnoutReasoning: "Long study hours without adequate breaks." }],
   weeklySummary: null,
+  moodInsights: {
+    weeklyAverage: 2,
+    priorWeeklyAverage: null,
+    delta: null,
+    direction: "stable",
+    byDayOfWeek: [
+      { day: "Mon", average: 3 },
+      { day: "Tue", average: 2 },
+      { day: "Wed", average: null },
+      { day: "Thu", average: null },
+      { day: "Fri", average: null },
+      { day: "Sat", average: null },
+      { day: "Sun", average: 2 },
+    ],
+    topEmotions: [{ emotion: "Anxious", count: 2 }],
+    moodBurnoutCorrelation: { lowBurnoutAvg: null, highBurnoutAvg: 2 },
+    lowMoodStreak: 0,
+  },
+  moodSummary: {
+    patternInsight: "Your mood tends to dip on Sundays after long study weeks.",
+    correlationNote: "Lower mood scores appear on medium burnout days.",
+    gentleAction: "Schedule a lighter revision block tomorrow morning.",
+  },
   daysToExam: null,
   streakCount: 1,
   examDate: null,
@@ -103,7 +126,45 @@ test("demo flow: register → onboarding → journal → insights → companion"
 
   await page.goto("/insights");
   await expect(page.getByText("Mood Timeline")).toBeVisible();
+  await expect(page.getByText("Mood Insights")).toBeVisible();
   await expect(page.getByText("Stress Trigger Frequency")).toBeVisible();
+
+  await page.route("**/api/study-plan", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          plan: {
+            id: "plan-e2e-1",
+            title: "NEET Recovery Week",
+            weekStart: "2026-06-09T00:00:00.000Z",
+            aiRationale: "Lighter plan because burnout is medium.",
+          },
+          items: [
+            {
+              id: "item-e2e-1",
+              subject: "Biology",
+              topic: "Cell structure",
+              description: "Revise NCERT chapter 8",
+              durationMinutes: 60,
+              scheduledDate: "2026-06-09T09:00:00.000Z",
+              status: "pending",
+              sortOrder: 0,
+              isUserEdited: false,
+            },
+          ],
+          progress: { total: 1, done: 0, percent: 0 },
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/study-plan");
+  await expect(page.getByText("NEET Recovery Week")).toBeVisible();
+  await expect(page.getByText(/Cell structure/i)).toBeVisible();
 
   await page.route("**/api/companion", async (route) => {
     if (route.request().method() === "POST") {

@@ -3,19 +3,19 @@
 import { useCallback, useRef, useState } from "react";
 import { Loader2, SendHorizonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useVoiceJournal } from "@/hooks/use-voice-journal";
 import { InsightCard, type InsightData } from "@/features/journal/insight-card";
 import { VoiceJournalButton } from "@/features/journal/voice-journal-button";
+import { MOOD_OPTIONS } from "@/lib/mood";
+import { getJournalPromptChips } from "@/lib/i18n/translations";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/lib/auth/types";
-
-const MOOD_LABELS = ["Very low", "Low", "Okay", "Good", "Great"];
 
 type JournalFormProps = {
   user: SessionUser & { name: string; examType: string };
@@ -32,6 +32,9 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [insight, setInsight] = useState<InsightData | null>(null);
+
+  const promptChips = getJournalPromptChips(language);
+  const selectedMood = MOOD_OPTIONS.find((m) => m.score === moodScore) ?? MOOD_OPTIONS[2];
 
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
     if (!isFinal || !text) return;
@@ -109,32 +112,44 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="corners">
-        <CardHeader>
-          <CardTitle>{t("journal.title")}</CardTitle>
-          <CardDescription>
+      <Card className="corners corners-purple overflow-hidden">
+        <div className="bg-gradient-purple px-6 py-4 text-primary-foreground">
+          <h2 className="text-lg font-semibold">{t("journal.title")}</h2>
+          <p className="mt-1 text-sm opacity-90">
             {t("journal.description").replace("today", `today, ${user.name}`)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="mood-slider">{t("journal.moodToday")}</Label>
-                <span className="text-sm font-medium text-primary" aria-live="polite">
-                  {MOOD_LABELS[moodScore - 1]} ({moodScore}/5)
-                </span>
+              <Label>{t("journal.moodToday")}</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {MOOD_OPTIONS.map((mood) => (
+                  <button
+                    key={mood.score}
+                    type="button"
+                    onClick={() => setMoodScore(mood.score)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border p-2 transition-all",
+                      moodScore === mood.score
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                        : "border-border hover:bg-accent/50"
+                    )}
+                    aria-pressed={moodScore === mood.score}
+                    aria-label={t(mood.labelKey)}
+                  >
+                    <span className="text-2xl" aria-hidden="true">{mood.emoji}</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:block">
+                      {t(mood.labelKey)}
+                    </span>
+                  </button>
+                ))}
               </div>
-              <Slider
-                id="mood-slider"
-                value={[moodScore]}
-                onValueChange={([value]) => setMoodScore(value)}
-                min={1}
-                max={5}
-                step={1}
-                aria-valuetext={MOOD_LABELS[moodScore - 1]}
-              />
+              <p className="text-sm text-primary font-medium" aria-live="polite">
+                {selectedMood.emoji} {t(selectedMood.labelKey)} ({moodScore}/5)
+              </p>
             </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="journal">{t("journal.whatsOnMind")}</Label>
@@ -152,12 +167,28 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                 id="journal"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="I studied for 8 hours but still feel behind. Mock test scores dropped and my parents asked about ranks..."
-                className="min-h-[160px]"
+                placeholder={t("journal.placeholder")}
+                className="min-h-[160px] resize-none"
                 required
                 minLength={10}
                 maxLength={5000}
               />
+              {!content && (
+                <div className="flex flex-wrap gap-2">
+                  {promptChips.map((chip) => (
+                    <Button
+                      key={chip}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-auto py-1.5"
+                      onClick={() => setContent(chip)}
+                    >
+                      {chip}
+                    </Button>
+                  ))}
+                </div>
+              )}
               {voice.isListening && (
                 <p className="text-sm text-primary animate-pulse" aria-live="polite">
                   {t("journal.voiceListening")}
@@ -170,6 +201,7 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                 </p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="mock-score">{t("journal.mockScore")}</Label>
               <Input
@@ -180,11 +212,20 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                 value={mockScore}
                 onChange={(e) => setMockScore(e.target.value)}
                 placeholder="e.g. 72"
+                className="max-w-[140px]"
               />
               <p className="text-xs text-muted-foreground">{t("journal.mockScoreHint")}</p>
             </div>
-            {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-            <Button type="submit" disabled={loading || content.trim().length < 10} className="w-full">
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">{error}</p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading || content.trim().length < 10}
+              className="w-full bg-gradient-purple hover:opacity-90"
+            >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />

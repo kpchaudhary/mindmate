@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildConfidenceTrend,
+  buildMoodInsights,
   buildMoodTimeline,
   computeTriggerFrequency,
   pickTopTrigger,
@@ -94,5 +95,72 @@ describe("buildConfidenceTrend", () => {
     ]);
 
     expect(trend[0].confidence).toBe(4);
+  });
+});
+
+describe("buildMoodInsights", () => {
+  it("computes weekly average and direction", () => {
+    const now = new Date("2026-06-13T12:00:00Z");
+    const insights = buildMoodInsights([
+      {
+        createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+        moodScore: 4,
+        mood: "Good",
+        burnoutLevel: "low",
+        emotions: ["Hopeful"],
+        triggers: null,
+      },
+      {
+        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+        moodScore: 3,
+        mood: "Okay",
+        burnoutLevel: "medium",
+        emotions: ["Tired"],
+        triggers: null,
+      },
+      {
+        createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        moodScore: 2,
+        mood: "Low",
+        burnoutLevel: "high",
+        emotions: ["Anxious"],
+        triggers: null,
+      },
+    ]);
+
+    expect(insights.weeklyAverage).toBe(3.5);
+    expect(insights.direction).toBe("improving");
+    expect(insights.topEmotions.length).toBeGreaterThan(0);
+  });
+
+  it("tracks low mood streak from most recent entries", () => {
+    const insights = buildMoodInsights([
+      {
+        createdAt: new Date("2026-06-13T12:00:00Z"),
+        moodScore: 2,
+        mood: "Low",
+        burnoutLevel: "high",
+        emotions: ["Anxious"],
+        triggers: null,
+      },
+      {
+        createdAt: new Date("2026-06-12T12:00:00Z"),
+        moodScore: 1,
+        mood: "Very low",
+        burnoutLevel: "high",
+        emotions: ["Overwhelmed"],
+        triggers: null,
+      },
+      {
+        createdAt: new Date("2026-06-11T12:00:00Z"),
+        moodScore: 4,
+        mood: "Good",
+        burnoutLevel: "low",
+        emotions: ["Calm"],
+        triggers: null,
+      },
+    ]);
+
+    expect(insights.lowMoodStreak).toBe(2);
   });
 });

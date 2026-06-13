@@ -1,7 +1,8 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, asc } from "drizzle-orm";
 import { getDb } from "./index";
 import {
   buildConfidenceTrend,
+  buildMoodInsights,
   buildMoodTimeline,
   computeTriggerFrequency,
   pickTopTrigger,
@@ -12,6 +13,8 @@ import {
   journalEntries,
   analyses,
   chatMessages,
+  studyPlans,
+  studyPlanItems,
   type ExamType,
 } from "./schema";
 
@@ -304,6 +307,17 @@ export async function getInsightsData(userId: string) {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const recentWeekEntries = entries.filter((e) => e.createdAt >= sevenDaysAgo);
 
+  const moodInsights = buildMoodInsights(
+    entries.map((entry) => ({
+      createdAt: entry.createdAt,
+      moodScore: entry.moodScore,
+      mood: entry.mood,
+      burnoutLevel: entry.burnoutLevel,
+      triggers: (entry.triggers as string[]) ?? null,
+      emotions: (entry.emotions as string[]) ?? null,
+    }))
+  );
+
   return {
     entries,
     triggerFrequency,
@@ -315,6 +329,7 @@ export async function getInsightsData(userId: string) {
     confidenceTrend,
     totalEntries: entries.length,
     recentWeekEntries,
+    moodInsights,
   };
 }
 
@@ -381,3 +396,197 @@ export async function getJournalEntriesForUser(userId: string, limit = 50) {
     .orderBy(desc(journalEntries.createdAt))
     .limit(limit);
 }
+
+function startOfWeek(date: Date): Date {
+  const d = startOfDay(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+export async function getActiveStudyPlan(userId: string) {
+  const [plan] = await getDb()
+    .select()
+    .from(studyPlans)
+    .where(and(eq(studyPlans.userId, userId), eq(studyPlans.status, "active")))
+    .orderBy(desc(studyPlans.createdAt))
+    .limit(1);
+
+  if (!plan) return null;
+
+  const items = await getDb()
+    .select()
+    .from(studyPlanItems)
+    .where(eq(studyPlanItems.planId, plan.id))
+    .orderBy(asc(studyPlanItems.scheduledDate), asc(studyPlanItems.sortOrder));
+
+  return { plan, items };
+}
+
+export async function archiveActivePlan(userId: string) {
+  await getDb()
+    .update(studyPlans)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(and(eq(studyPlans.userId, userId), eq(studyPlans.status, "active")));
+}
+
+export async function createStudyPlanWithItems(
+  userId: string,
+  input: {
+    title: string;
+    weekStart: Date;
+    aiRationale: string;
+    items: Array<{
+      subject: string;
+      topic: string;
+      description: string;
+      durationMinutes: number;
+      scheduledDate: Date;
+      sortOrder: number;
+    }>;
+  }
+) {
+  return getDb().transaction(async (tx) => {
+    await tx
+      .update(studyPlans)
+      .set({ status: "archived", updatedAt: new Date() })
+      .where(and(eq(studyPlans.userId, userId), eq(studyPlans.status, "active")));
+
+    const [plan] = await tx
+      .insert(studyPlans)
+      .values({
+        userId,
+        title: input.title,
+        weekStart: input.weekStart,
+        aiRationale: input.aiRationale,
+        status: "active",
+      })
+      .returning();
+
+    const items =
+      input.items.length > 0
+        ? await tx
+            .insert(studyPlanItems)
+            .values(
+              input.items.map((item) => ({
+                planId: plan.id,
+                subject: item.subject,
+                topic: item.topic,
+                description: item.description,
+                durationMinutes: item.durationMinutes,
+                scheduledDate: item.scheduledDate,
+                sortOrder: item.sortOrder,
+              }))
+            )
+            .returning()
+        : [];
+
+    return { plan, items };
+  });
+}
+
+async function verifyPlanItemOwnership(itemId: string, userId: string) {
+  const [row] = await getDb()
+    .select({ item: studyPlanItems, plan: studyPlans })
+    .from(studyPlanItems)
+    .innerJoin(studyPlans, eq(studyPlans.id, studyPlanItems.planId))
+    .where(and(eq(studyPlanItems.id, itemId), eq(studyPlans.userId, userId)))
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function updateStudyPlanItem(
+  itemId: string,
+  userId: string,
+  patch: {
+    subject?: string;
+    topic?: string;
+    description?: string;
+    durationMinutes?: number;
+    scheduledDate?: Date;
+    status?: "pending" | "done";
+  }
+) {
+  const row = await verifyPlanItemOwnership(itemId, userId);
+  if (!row) return null;
+
+  const [item] = await getDb()
+    .update(studyPlanItems)
+    .set({
+      ...(patch.subject !== undefined && { subject: patch.subject, isUserEdited: true }),
+      ...(patch.topic !== undefined && { topic: patch.topic, isUserEdited: true }),
+      ...(patch.description !== undefined && { description: patch.description, isUserEdited: true }),
+      ...(patch.durationMinutes !== undefined && {
+        durationMinutes: patch.durationMinutes,
+        isUserEdited: true,
+      }),
+      ...(patch.scheduledDate !== undefined && {
+        scheduledDate: patch.scheduledDate,
+        isUserEdited: true,
+      }),
+      ...(patch.status !== undefined && { status: patch.status }),
+    })
+    .where(eq(studyPlanItems.id, itemId))
+    .returning();
+
+  return item ?? null;
+}
+
+export async function addStudyPlanItem(
+  planId: string,
+  userId: string,
+  item: {
+    subject: string;
+    topic: string;
+    description: string;
+    durationMinutes: number;
+    scheduledDate: Date;
+  }
+) {
+  const [plan] = await getDb()
+    .select()
+    .from(studyPlans)
+    .where(
+      and(eq(studyPlans.id, planId), eq(studyPlans.userId, userId), eq(studyPlans.status, "active"))
+    )
+    .limit(1);
+
+  if (!plan) return null;
+
+  const existing = await getDb()
+    .select({ sortOrder: studyPlanItems.sortOrder })
+    .from(studyPlanItems)
+    .where(eq(studyPlanItems.planId, planId))
+    .orderBy(desc(studyPlanItems.sortOrder))
+    .limit(1);
+
+  const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
+
+  const [created] = await getDb()
+    .insert(studyPlanItems)
+    .values({
+      planId,
+      subject: item.subject,
+      topic: item.topic,
+      description: item.description,
+      durationMinutes: item.durationMinutes,
+      scheduledDate: item.scheduledDate,
+      sortOrder,
+      isUserEdited: true,
+    })
+    .returning();
+
+  return created ?? null;
+}
+
+export async function deleteStudyPlanItem(itemId: string, userId: string) {
+  const row = await verifyPlanItemOwnership(itemId, userId);
+  if (!row) return false;
+
+  await getDb().delete(studyPlanItems).where(eq(studyPlanItems.id, itemId));
+  return true;
+}
+
+export { startOfWeek };

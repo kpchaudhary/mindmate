@@ -33,7 +33,10 @@ function loadEnvFile(filename) {
 
 loadEnvFile(".env");
 loadEnvFile(".env.local");
-const sqlPath = resolve(__dirname, "../drizzle/0002_product_features.sql");
+const migrationFiles = [
+  "../drizzle/0002_product_features.sql",
+  "../drizzle/0003_study_plan.sql",
+];
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -41,14 +44,15 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-const migrationSql = readFileSync(sqlPath, "utf8");
-
 async function main() {
   const sql = postgres(databaseUrl, { max: 1 });
   try {
-    console.log("Applying safe migration: drizzle/0002_product_features.sql");
-    await sql.unsafe(migrationSql);
-    console.log("Migration applied successfully.");
+    for (const file of migrationFiles) {
+      const sqlPath = resolve(__dirname, file);
+      console.log(`Applying safe migration: ${file.replace("../", "")}`);
+      await sql.unsafe(readFileSync(sqlPath, "utf8"));
+    }
+    console.log("Migrations applied successfully.");
   } catch (error) {
     console.error("Migration failed:", error);
     process.exit(1);

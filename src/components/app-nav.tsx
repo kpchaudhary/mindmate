@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpen,
+  CalendarCheck,
   LayoutDashboard,
   MessageCircle,
   Settings,
@@ -33,6 +34,7 @@ import type { SessionUser } from "@/lib/auth/types";
 const NAV_HREFS = [
   { href: "/insights", key: "nav.dashboard" as const, icon: LayoutDashboard },
   { href: "/journal", key: "nav.journal" as const, icon: BookOpen },
+  { href: "/study-plan", key: "nav.studyPlan" as const, icon: CalendarCheck },
   { href: "/companion", key: "nav.companion" as const, icon: MessageCircle },
 ];
 

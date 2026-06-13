@@ -5,6 +5,15 @@ import {
   weeklySummarySchema,
   type WeeklySummary,
   weeklySummaryResponseSchema,
+  studyPlanSchema,
+  type StudyPlanGeneration,
+  studyPlanResponseSchema,
+  studyPlanAdviceSchema,
+  type StudyPlanAdvice,
+  studyPlanAdviceResponseSchema,
+  moodSummarySchema,
+  type MoodSummary,
+  moodSummaryResponseSchema,
   STRESS_TRIGGERS,
 } from "./schemas";
 import type { Language } from "@/lib/db/schema";
@@ -45,10 +54,17 @@ Tone should feel natural to Indian students — warm, relatable, not overly form
   return "";
 }
 
+type GeminiJsonSchema =
+  | typeof analysisResponseSchema
+  | typeof weeklySummaryResponseSchema
+  | typeof studyPlanResponseSchema
+  | typeof studyPlanAdviceResponseSchema
+  | typeof moodSummaryResponseSchema;
+
 type GeminiGenerateParams = {
   systemInstruction: string;
   userPrompt: string;
-  jsonSchema?: typeof analysisResponseSchema | typeof weeklySummaryResponseSchema;
+  jsonSchema?: GeminiJsonSchema;
   language?: Language;
 };
 
@@ -288,4 +304,169 @@ Return JSON with: summary (2-3 sentences reviewing the week), actionableInsight 
   });
 
   return weeklySummarySchema.parse(JSON.parse(raw));
+}
+
+export type StudyPlanContext = {
+  studentName: string;
+  examType: string;
+  daysToExam: number | null;
+  focusNote?: string;
+  recentBurnout: string;
+  avgMoodScore: number | null;
+  topTrigger: string | null;
+  lowMoodStreak: number;
+  weekStartDate: string;
+  language?: Language;
+};
+
+export async function generateStudyPlan(context: StudyPlanContext): Promise<StudyPlanGeneration> {
+  const intensityNote =
+    context.recentBurnout === "high" || context.lowMoodStreak >= 2
+      ? "Reduce daily study hours, include lighter revision and breaks. Student shows signs of burnout or low mood."
+      : context.recentBurnout === "medium"
+        ? "Moderate intensity with built-in rest blocks."
+        : "Standard productive schedule is fine.";
+
+  const systemInstruction = `
+You are MindMate's study coach for ${context.studentName} preparing for ${context.examType}.
+Create a practical 7-day study plan — not therapy, not wellness advice.
+Use exam-specific subjects (e.g. NEET: Physics, Chemistry, Biology; JEE: Physics, Chemistry, Maths).
+${intensityNote}
+Each day should have 2-4 focused tasks. Total daily study time should match wellness state.
+Explain in rationale how mood/burnout influenced the plan intensity.
+`.trim();
+
+  const userPrompt = `
+Exam: ${context.examType}
+Days to exam: ${context.daysToExam ?? "unknown"}
+Week starting: ${context.weekStartDate}
+Recent burnout: ${context.recentBurnout}
+Average mood (1-5): ${context.avgMoodScore ?? "no data"}
+Top stress trigger: ${context.topTrigger ?? "none logged"}
+Low mood streak (recent entries ≤2): ${context.lowMoodStreak}
+Student focus note: ${context.focusNote ?? "none"}
+
+Return JSON with:
+- title: short plan title
+- rationale: 2-3 sentences explaining the plan and how wellness context shaped it
+- items: array of tasks with subject, topic, description, durationMinutes (15-240), scheduledDate (YYYY-MM-DD within the 7-day window starting ${context.weekStartDate})
+`.trim();
+
+  const raw = await generateWithGemini({
+    systemInstruction,
+    userPrompt,
+    jsonSchema: studyPlanResponseSchema,
+    language: context.language,
+  });
+
+  return studyPlanSchema.parse(JSON.parse(raw));
+}
+
+export type StudyPlanAdviceContext = {
+  studentName: string;
+  examType: string;
+  message: string;
+  planTitle: string;
+  pendingItems: Array<{ subject: string; topic: string; scheduledDate: string; durationMinutes: number }>;
+  recentBurnout: string;
+  avgMoodScore: number | null;
+  language?: Language;
+};
+
+export async function getStudyPlanAdvice(
+  context: StudyPlanAdviceContext
+): Promise<StudyPlanAdvice> {
+  const tasksText = context.pendingItems
+    .slice(0, 10)
+    .map(
+      (item) =>
+        `- ${item.scheduledDate}: ${item.subject} — ${item.topic} (${item.durationMinutes} min)`
+    )
+    .join("\n");
+
+  const systemInstruction = `
+You are MindMate's study coach helping ${context.studentName} adjust their ${context.examType} study plan.
+Be practical: suggest which tasks to skip, defer, shorten, or swap for lighter alternatives.
+Reference their burnout level (${context.recentBurnout}) and mood when relevant.
+Keep advice supportive but focused on study scheduling, not therapy.
+`.trim();
+
+  const userPrompt = `
+Current plan: ${context.planTitle}
+Pending tasks:
+${tasksText || "No pending tasks"}
+
+Recent average mood: ${context.avgMoodScore ?? "unknown"}/5
+Burnout: ${context.recentBurnout}
+
+Student message:
+"""
+${context.message}
+"""
+
+Return JSON with advice (2-3 short paragraphs) and suggestedChanges (2-4 bullet-style actionable changes).
+`.trim();
+
+  const raw = await generateWithGemini({
+    systemInstruction,
+    userPrompt,
+    jsonSchema: studyPlanAdviceResponseSchema,
+    language: context.language,
+  });
+
+  return studyPlanAdviceSchema.parse(JSON.parse(raw));
+}
+
+export type MoodSummaryContext = {
+  studentName: string;
+  examType: string;
+  moodTimeline: Array<{ date: string; moodScore: number; mood: string | null; burnoutLevel: string | null }>;
+  byDayOfWeek: Array<{ day: string; average: number | null }>;
+  topEmotions: Array<{ emotion: string; count: number }>;
+  moodBurnoutCorrelation: { lowBurnoutAvg: number | null; highBurnoutAvg: number | null };
+  direction: string;
+  weeklyAverage: number | null;
+  language?: Language;
+};
+
+export async function generateMoodSummary(context: MoodSummaryContext): Promise<MoodSummary> {
+  const timelineText = context.moodTimeline
+    .slice(-7)
+    .map((e) => `${e.date}: mood ${e.moodScore}/5 (${e.mood ?? "unknown"}), burnout ${e.burnoutLevel ?? "unknown"}`)
+    .join("\n");
+
+  const dayPattern = context.byDayOfWeek
+    .filter((d) => d.average !== null)
+    .map((d) => `${d.day}: avg ${d.average}/5`)
+    .join(", ");
+
+  const emotionsText = context.topEmotions.map((e) => `${e.emotion} (${e.count}x)`).join(", ");
+
+  const systemInstruction = `
+Analyze mood patterns for ${context.studentName} preparing for ${context.examType}.
+Reveal something non-obvious — a day-of-week dip, emotion-burnout link, or trend they may not notice.
+Never diagnose. Be warm and specific to their data.
+`.trim();
+
+  const userPrompt = `
+Recent mood entries:
+${timelineText || "none"}
+
+Mood by day of week: ${dayPattern || "insufficient data"}
+Top emotions: ${emotionsText || "none yet"}
+Weekly average: ${context.weeklyAverage ?? "unknown"}/5, trend: ${context.direction}
+Mood when burnout low: ${context.moodBurnoutCorrelation.lowBurnoutAvg ?? "unknown"}/5
+Mood when burnout high: ${context.moodBurnoutCorrelation.highBurnoutAvg ?? "unknown"}/5
+
+Return JSON with patternInsight, correlationNote, gentleAction (one small doable step).
+`.trim();
+
+  const raw = await generateWithGemini({
+    systemInstruction,
+    userPrompt,
+    jsonSchema: moodSummaryResponseSchema,
+    language: context.language,
+  });
+
+  return moodSummarySchema.parse(JSON.parse(raw));
 }
