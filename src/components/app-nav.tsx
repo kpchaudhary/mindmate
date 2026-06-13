@@ -8,7 +8,6 @@ import {
   CalendarCheck,
   LayoutDashboard,
   LogOut,
-  MessageCircle,
   Settings,
   Sparkles,
   User,
@@ -28,6 +27,8 @@ import {
 } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { SettingsSheet } from "@/features/settings/settings-sheet";
+import { CompanionChatTrigger } from "@/features/companion/companion-chat-trigger";
+import { useCompanionChat } from "@/features/companion/companion-chat-context";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import type { SessionUser } from "@/lib/auth/types";
@@ -36,7 +37,6 @@ const NAV_HREFS = [
   { href: "/insights", key: "nav.dashboard" as const, icon: LayoutDashboard },
   { href: "/journal", key: "nav.journal" as const, icon: BookOpen },
   { href: "/study-plan", key: "nav.studyPlan" as const, icon: CalendarCheck },
-  { href: "/companion", key: "nav.companion" as const, icon: MessageCircle },
 ];
 
 type AppNavProps = {
@@ -87,6 +87,7 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { openChat } = useCompanionChat();
   const { t } = useLanguage();
 
   async function handleLogout() {
@@ -124,7 +125,9 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
             ))}
           </nav>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-1">
+            <CompanionChatTrigger onClick={openChat} />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
                 <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
@@ -148,6 +151,7 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
 

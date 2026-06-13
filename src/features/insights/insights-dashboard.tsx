@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/error-state";
+import { useCompanionChat } from "@/features/companion/companion-chat-context";
 import { apiFetch } from "@/lib/api-client";
 import { getTimeGreeting } from "@/lib/greeting";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -80,6 +81,7 @@ function ChartSkeleton() {
 
 export function InsightsDashboard({ user }: InsightsDashboardProps) {
   const { t, getExamCountdownNudge } = useLanguage();
+  const { openChat } = useCompanionChat();
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -308,11 +310,9 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
             {t("dashboard.writeJournal")}
           </Link>
         </Button>
-        <Button asChild variant="outline">
-          <Link href="/companion">
-            <MessageCircle className="h-4 w-4" />
-            {t("dashboard.openCompanion")}
-          </Link>
+        <Button variant="outline" onClick={openChat}>
+          <MessageCircle className="h-4 w-4" />
+          {t("dashboard.openCompanion")}
         </Button>
       </div>
     </div>

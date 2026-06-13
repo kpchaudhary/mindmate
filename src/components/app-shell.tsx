@@ -7,6 +7,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { PageTransition } from "@/components/page-transition";
 import { ReminderScheduler } from "@/components/reminder-scheduler";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { CompanionChatProvider } from "@/features/companion/companion-chat-context";
 import { LanguageProvider } from "@/lib/i18n/language-context";
 import { isProfileComplete, type SessionUser } from "@/lib/auth/types";
 import type { ExamType, Language } from "@/lib/db/schema";
@@ -78,20 +79,22 @@ export function AppShell({ children }: AppShellProps) {
     <UserContext.Provider value={user}>
       <UserUpdateContext.Provider value={handleUserUpdate}>
         <LanguageProvider language={user.language as Language}>
-          <ReminderScheduler user={user} />
-          <ServiceWorkerRegister />
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
-          >
-            Skip to main content
-          </a>
-          <div className="min-h-screen bg-background">
-            <AppNav user={user} onUserUpdate={handleUserUpdate} />
-            <main id="main" className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
-              <PageTransition>{children}</PageTransition>
-            </main>
-          </div>
+          <CompanionChatProvider user={user}>
+            <ReminderScheduler user={user} />
+            <ServiceWorkerRegister />
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+            >
+              Skip to main content
+            </a>
+            <div className="min-h-screen bg-background">
+              <AppNav user={user} onUserUpdate={handleUserUpdate} />
+              <main id="main" className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
+                <PageTransition>{children}</PageTransition>
+              </main>
+            </div>
+          </CompanionChatProvider>
         </LanguageProvider>
       </UserUpdateContext.Provider>
     </UserContext.Provider>

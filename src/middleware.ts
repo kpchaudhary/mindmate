@@ -30,6 +30,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (pathname === "/companion") {
+    return NextResponse.redirect(new URL("/insights", request.url));
+  }
+
   return NextResponse.next();
 }
 

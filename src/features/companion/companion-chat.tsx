@@ -20,11 +20,14 @@ const DEFAULT_CHIPS = [
   "I feel behind compared to my friends",
 ];
 
-type CompanionChatProps = {
-  user: SessionUser & { name: string; examType: string };
+type CompanionChatUser = SessionUser & { name: string; examType: string };
+
+type CompanionChatPanelProps = {
+  user: CompanionChatUser;
+  className?: string;
 };
 
-export function CompanionChat({ user }: CompanionChatProps) {
+export function CompanionChatPanel({ user, className }: CompanionChatPanelProps) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [promptChips, setPromptChips] = useState<string[]>(DEFAULT_CHIPS);
@@ -115,73 +118,71 @@ export function CompanionChat({ user }: CompanionChatProps) {
   );
 
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center px-2 py-4">
-      <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-xl border bg-card shadow-lg min-h-[70vh] max-h-[85vh]">
-        <div className="shrink-0 border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
-            <div>
-              <h1 className="text-base font-semibold">{t("companion.title")}</h1>
-              <p className="text-xs text-muted-foreground">
-                {t("companion.subtitle")} {user.examType} journey
-              </p>
-            </div>
+    <div className={className ?? "flex h-full flex-col overflow-hidden"}>
+      <div className="shrink-0 border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
+          <div>
+            <h2 className="text-base font-semibold">{t("companion.title")}</h2>
+            <p className="text-xs text-muted-foreground">
+              {t("companion.subtitle")} {user.examType} journey
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4">
-          {networkError && (
-            <Alert variant="destructive">
-              <AlertDescription className="flex items-center justify-between gap-2">
-                <span>{t("companion.sendError")}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setNetworkError(false)}
-                >
-                  {t("companion.dismiss")}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4">
+        {networkError && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between gap-2">
+              <span>{t("companion.sendError")}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setNetworkError(false)}
+              >
+                {t("companion.dismiss")}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-          <div className="flex-1 overflow-y-auto scrollbar-hide pr-1">
-            <ChatMessageList
-              messages={messages}
-              userName={user.name}
-              avatarUrl={user.avatarUrl}
-              loading={loading}
-              initialLoading={initialLoading}
-              emptyState={emptyState}
-            />
-          </div>
-
-          <form onSubmit={handleSend} className="flex shrink-0 gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={t("companion.placeholder")}
-              className="min-h-[60px] flex-1 resize-none"
-              maxLength={2000}
-              aria-label="Message to MindMate"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void handleSend(e);
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={loading || !input.trim()}
-              className="shrink-0 self-end"
-              aria-label="Send message"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+        <div className="flex-1 overflow-y-auto scrollbar-hide pr-1">
+          <ChatMessageList
+            messages={messages}
+            userName={user.name}
+            avatarUrl={user.avatarUrl}
+            loading={loading}
+            initialLoading={initialLoading}
+            emptyState={emptyState}
+          />
         </div>
+
+        <form onSubmit={handleSend} className="flex shrink-0 gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t("companion.placeholder")}
+            className="min-h-[60px] flex-1 resize-none"
+            maxLength={2000}
+            aria-label="Message to MindMate"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void handleSend(e);
+              }
+            }}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={loading || !input.trim()}
+            className="shrink-0 self-end"
+            aria-label="Send message"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
       </div>
     </div>
   );

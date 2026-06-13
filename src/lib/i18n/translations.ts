@@ -70,6 +70,7 @@ export type TranslationKey =
   | "companion.empty"
   | "companion.sendError"
   | "companion.dismiss"
+  | "companion.openSheet"
   | "settings.title"
   | "settings.examDate"
   | "settings.examDateHint"
@@ -221,6 +222,7 @@ const en: Record<TranslationKey, string> = {
     "I'm here whenever prep feels overwhelming. Ask me for a coping strategy, a quick mindfulness exercise, or just vent about today.",
   "companion.sendError": "Could not send message. Please try again.",
   "companion.dismiss": "Dismiss",
+  "companion.openSheet": "Open companion chat",
   "settings.title": "Settings",
   "settings.examDate": "Exam date",
   "settings.examDateHint": "Optional — enables countdown on dashboard",
@@ -374,6 +376,7 @@ const hi: Record<TranslationKey, string> = {
     "जब भी प्रेप भारी लगे, मैं यहाँ हूँ। coping strategy, mindfulness exercise, या बस आज की बात — कुछ भी पूछें।",
   "companion.sendError": "मैसेज नहीं भेजा जा सका। फिर कोशिश करें।",
   "companion.dismiss": "बंद करें",
+  "companion.openSheet": "साथी चैट खोलें",
   "settings.title": "सेटिंग्स",
   "settings.examDate": "एग्जाम की तारीख",
   "settings.examDateHint": "वैकल्पिक — डैशबोर्ड पर काउंटडाउन दिखेगा",

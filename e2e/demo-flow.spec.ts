@@ -183,7 +183,7 @@ test("demo flow: register → onboarding → journal → insights → companion"
     await route.continue();
   });
 
-  await page.goto("/companion");
+  await page.getByRole("button", { name: /open companion chat/i }).click();
   await page.getByLabel("Message to MindMate").fill("I'm scared about tomorrow's test");
   await page.getByLabel("Send message").click();
 
@@ -191,7 +191,7 @@ test("demo flow: register → onboarding → journal → insights → companion"
     page.getByText(/Exam anxiety has come up in your journals/i)
   ).toBeVisible();
 
-  for (const path of ["/login", "/journal", "/insights", "/companion"]) {
+  for (const path of ["/login", "/journal", "/insights"]) {
     await page.goto(path === "/login" ? "/login" : path);
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
     expect(accessibilityScanResults.violations).toEqual([]);
