@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Loader2, SendHorizonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useVoiceJournal } from "@/hooks/use-voice-journal";
 import { InsightCard, type InsightData } from "@/features/journal/insight-card";
+import { VoiceJournalButton } from "@/features/journal/voice-journal-button";
 import { useLanguage } from "@/lib/i18n/language-context";
 import type { SessionUser } from "@/lib/auth/types";
 
@@ -21,7 +23,7 @@ type JournalFormProps = {
 };
 
 export function JournalForm({ user, onSubmitted }: JournalFormProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const insightRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState("");
@@ -31,8 +33,35 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [insight, setInsight] = useState<InsightData | null>(null);
 
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (!isFinal || !text) return;
+    setContent((prev) => {
+      const trimmed = text.trim();
+      if (!trimmed) return prev;
+      const combined = prev ? `${prev.trimEnd()} ${trimmed}` : trimmed;
+      return combined.slice(0, 5000);
+    });
+  }, []);
+
+  const voice = useVoiceJournal({
+    language: user.language ?? language,
+    onTranscript: handleTranscript,
+  });
+
+  const voiceErrorMessage =
+    voice.error === "permission"
+      ? t("journal.voicePermission")
+      : voice.error === "no-speech"
+        ? t("journal.voiceNoSpeech")
+        : voice.error === "failed" || voice.error === "unsupported"
+          ? voice.error === "unsupported"
+            ? t("journal.voiceUnsupported")
+            : t("journal.voiceFailed")
+          : null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    voice.stop();
     setError(null);
     setLoading(true);
     setInsight(null);
@@ -107,9 +136,17 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="journal">{t("journal.whatsOnMind")}</Label>
-                <span className="text-xs text-muted-foreground">{content.length} / 5000</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{content.length} / 5000</span>
+                  <VoiceJournalButton
+                    isSupported={voice.isSupported}
+                    isListening={voice.isListening}
+                    disabled={loading}
+                    onToggle={voice.toggle}
+                  />
+                </div>
               </div>
               <Textarea
                 id="journal"
@@ -121,6 +158,17 @@ export function JournalForm({ user, onSubmitted }: JournalFormProps) {
                 minLength={10}
                 maxLength={5000}
               />
+              {voice.isListening && (
+                <p className="text-sm text-primary animate-pulse" aria-live="polite">
+                  {t("journal.voiceListening")}
+                  {voice.interimTranscript ? `: "${voice.interimTranscript}"` : ""}
+                </p>
+              )}
+              {voiceErrorMessage && (
+                <p className="text-sm text-destructive" role="alert">
+                  {voiceErrorMessage}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="mock-score">{t("journal.mockScore")}</Label>

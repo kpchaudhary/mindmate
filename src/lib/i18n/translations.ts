@@ -34,6 +34,14 @@ export type TranslationKey =
   | "journal.mockScoreHint"
   | "journal.analyze"
   | "journal.analyzing"
+  | "journal.voice"
+  | "journal.voiceStart"
+  | "journal.voiceStop"
+  | "journal.voiceListening"
+  | "journal.voiceUnsupported"
+  | "journal.voicePermission"
+  | "journal.voiceNoSpeech"
+  | "journal.voiceFailed"
   | "companion.title"
   | "companion.subtitle"
   | "companion.placeholder"
@@ -84,6 +92,14 @@ const en: Record<TranslationKey, string> = {
   "journal.mockScoreHint": "0–100, helps track score vs mood",
   "journal.analyze": "Analyze my journal",
   "journal.analyzing": "Analyzing with AI...",
+  "journal.voice": "Voice",
+  "journal.voiceStart": "Start voice journal",
+  "journal.voiceStop": "Stop recording",
+  "journal.voiceListening": "Listening… speak freely, tap Stop when done",
+  "journal.voiceUnsupported": "Voice input works in Chrome and Safari on mobile/desktop",
+  "journal.voicePermission": "Microphone access denied. Allow mic permission in browser settings.",
+  "journal.voiceNoSpeech": "No speech detected. Try again and speak clearly.",
+  "journal.voiceFailed": "Voice input failed. Type your journal instead.",
   "companion.title": "MindMate Companion",
   "companion.subtitle": "Context-aware support for your",
   "companion.placeholder": "I'm anxious about tomorrow's mock test...",
@@ -136,6 +152,14 @@ const hi: Record<TranslationKey, string> = {
   "journal.mockScoreHint": "0–100, स्कोर और मूड का सहसंबंध",
   "journal.analyze": "मेरा जर्नल विश्लेषण करें",
   "journal.analyzing": "AI से विश्लेषण हो रहा है...",
+  "journal.voice": "आवाज़",
+  "journal.voiceStart": "वॉइस जर्नल शुरू करें",
+  "journal.voiceStop": "रिकॉर्डिंग बंद करें",
+  "journal.voiceListening": "सुन रहे हैं… बोलें, हो जाए तो Stop दबाएं",
+  "journal.voiceUnsupported": "वॉइस Chrome या Safari में mobile/desktop पर काम करता है",
+  "journal.voicePermission": "माइक की permission नहीं मिली। browser settings में allow करें।",
+  "journal.voiceNoSpeech": "आवाज़ नहीं सुनाई दी। फिर से बोलें।",
+  "journal.voiceFailed": "वॉइस input fail हुआ। टाइप करके लिखें।",
   "companion.title": "MindMate साथी",
   "companion.subtitle": "आपकी",
   "companion.placeholder": "कल के mock test को लेकर चिंता है...",
