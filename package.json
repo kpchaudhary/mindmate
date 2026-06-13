@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:migrate:features": "node scripts/db-migrate-features.mjs"
+    "db:migrate:features": "node scripts/db-migrate-features.mjs",
+    "db:reset-password": "node scripts/reset-user-password.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.12",
