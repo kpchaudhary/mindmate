@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 272 38% 50%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 272 30% 95%;
+    --accent-foreground: 272 38% 50%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 272 38% 50%;
+    --radius: 0.5rem;
+    --chart-primary: 272 38% 50%;
+    --gradient-purple: linear-gradient(to bottom, #9264BA, #783EA9);
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 272 40% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 272 25% 20%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 60% 45%;
+    --warning: 38 80% 55%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 272 40% 60%;
+    --chart-primary: 272 40% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .corners {
+    position: relative;
+  }
+
+  .corners-purple::before,
+  .corners-purple::after,
+  .corners-purple .corners-inner::before,
+  .corners-purple .corners-inner::after {
+    border-color: hsl(var(--primary)) !important;
+  }
+
+  .corners::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 5px;
+    border-left: 1.5px solid hsl(var(--border));
+    border-top: 1.5px solid hsl(var(--border));
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .corners::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 5px;
+    height: 5px;
+    border-top: 1.5px solid hsl(var(--border));
+    border-right: 1.5px solid hsl(var(--border));
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .corners-inner::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    bottom: -1px;
+    width: 5px;
+    height: 5px;
+    border-left: 1.5px solid hsl(var(--border));
+    border-bottom: 1.5px solid hsl(var(--border));
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .corners-inner::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid hsl(var(--border));
+    border-bottom: 1.5px solid hsl(var(--border));
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .bg-gradient-purple {
+    background: var(--gradient-purple);
+  }
+
+  .line-bg {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.15) 0px,
+      rgba(168, 85, 247, 0.15) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    background-color: rgba(168, 85, 247, 0.05);
+  }
+}
