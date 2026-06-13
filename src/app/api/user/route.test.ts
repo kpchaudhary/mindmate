@@ -24,8 +24,14 @@ describe("PATCH /api/user", () => {
     vi.mocked(requireSession).mockResolvedValue({
       id: "user-1",
       email: "student@example.com",
-      name: null,
-      examType: null,
+      name: "Priya",
+      examType: "NEET",
+      examDate: null,
+      streakCount: 0,
+      reminderEnabled: false,
+      reminderTime: null,
+      language: "en",
+      avatarUrl: null,
     });
 
     const response = await PATCH(
@@ -43,6 +49,12 @@ describe("PATCH /api/user", () => {
       email: "student@example.com",
       name: null,
       examType: null,
+      examDate: null,
+      streakCount: 0,
+      reminderEnabled: false,
+      reminderTime: null,
+      language: "en",
+      avatarUrl: null,
     });
     vi.mocked(getUserById).mockResolvedValue({
       id: "user-1",
@@ -51,9 +63,12 @@ describe("PATCH /api/user", () => {
       name: null,
       examType: null,
       examDate: null,
+      streakCount: 0,
+      lastJournalDate: null,
       reminderEnabled: false,
       reminderTime: null,
       language: "en",
+      avatarUrl: null,
       createdAt: new Date(),
     });
     vi.mocked(updateUser).mockResolvedValue({
@@ -63,16 +78,23 @@ describe("PATCH /api/user", () => {
       name: "Priya",
       examType: "NEET",
       examDate: null,
+      streakCount: 0,
+      lastJournalDate: null,
       reminderEnabled: false,
       reminderTime: null,
       language: "en",
+      avatarUrl: "https://example.com/photo.jpg",
       createdAt: new Date(),
     });
 
     const response = await PATCH(
       new Request("http://localhost/api/user", {
         method: "PATCH",
-        body: JSON.stringify({ name: "Priya", examType: "NEET" }),
+        body: JSON.stringify({
+          name: "Priya",
+          examType: "NEET",
+          avatarUrl: "https://example.com/photo.jpg",
+        }),
       })
     );
 
@@ -80,5 +102,69 @@ describe("PATCH /api/user", () => {
     const body = await response.json();
     expect(body.name).toBe("Priya");
     expect(body.examType).toBe("NEET");
+    expect(body.avatarUrl).toBe("https://example.com/photo.jpg");
+  });
+
+  it("updates preferences only", async () => {
+    vi.mocked(requireSession).mockResolvedValue({
+      id: "user-1",
+      email: "student@example.com",
+      name: "Priya",
+      examType: "NEET",
+      examDate: null,
+      streakCount: 0,
+      reminderEnabled: false,
+      reminderTime: null,
+      language: "en",
+      avatarUrl: null,
+    });
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "user-1",
+      email: "student@example.com",
+      passwordHash: "hash",
+      name: "Priya",
+      examType: "NEET",
+      examDate: null,
+      streakCount: 0,
+      lastJournalDate: null,
+      reminderEnabled: false,
+      reminderTime: null,
+      language: "en",
+      avatarUrl: null,
+      createdAt: new Date(),
+    });
+    vi.mocked(updateUser).mockResolvedValue({
+      id: "user-1",
+      email: "student@example.com",
+      passwordHash: "hash",
+      name: "Priya",
+      examType: "NEET",
+      examDate: null,
+      streakCount: 0,
+      lastJournalDate: null,
+      reminderEnabled: true,
+      reminderTime: "21:00",
+      language: "hi",
+      avatarUrl: null,
+      createdAt: new Date(),
+    });
+
+    const response = await PATCH(
+      new Request("http://localhost/api/user", {
+        method: "PATCH",
+        body: JSON.stringify({
+          reminderEnabled: true,
+          reminderTime: "21:00",
+          language: "hi",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateUser).toHaveBeenCalledWith("user-1", {
+      reminderEnabled: true,
+      reminderTime: "21:00",
+      language: "hi",
+    });
   });
 });

@@ -142,6 +142,7 @@ export function CompanionChat({ user }: CompanionChatProps) {
             <ChatMessageList
               messages={messages}
               userName={user.name}
+              avatarUrl={user.avatarUrl}
               loading={loading}
               initialLoading={initialLoading}
               emptyState={emptyState}

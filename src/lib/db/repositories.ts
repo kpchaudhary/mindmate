@@ -56,6 +56,7 @@ export async function getSessionByTokenHash(tokenHash: string) {
       reminderEnabled: users.reminderEnabled,
       reminderTime: users.reminderTime,
       language: users.language,
+      avatarUrl: users.avatarUrl,
       expiresAt: sessions.expiresAt,
     })
     .from(sessions)
@@ -81,9 +82,10 @@ export async function getUserById(userId: string) {
 export async function updateUser(
   userId: string,
   data: {
-    name: string;
-    examType: ExamType;
+    name?: string;
+    examType?: ExamType;
     examDate?: Date | null;
+    avatarUrl?: string | null;
     reminderEnabled?: boolean;
     reminderTime?: string | null;
     language?: "en" | "hi";
@@ -92,13 +94,23 @@ export async function updateUser(
   const [user] = await getDb()
     .update(users)
     .set({
-      name: data.name,
-      examType: data.examType,
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.examType !== undefined && { examType: data.examType }),
       ...(data.examDate !== undefined && { examDate: data.examDate }),
+      ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
       ...(data.reminderEnabled !== undefined && { reminderEnabled: data.reminderEnabled }),
       ...(data.reminderTime !== undefined && { reminderTime: data.reminderTime }),
       ...(data.language !== undefined && { language: data.language }),
     })
+    .where(eq(users.id, userId))
+    .returning();
+  return user;
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string) {
+  const [user] = await getDb()
+    .update(users)
+    .set({ passwordHash })
     .where(eq(users.id, userId))
     .returning();
   return user;

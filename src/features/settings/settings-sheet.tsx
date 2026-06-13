@@ -33,7 +33,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { isProfileComplete, type SessionUser } from "@/lib/auth/types";
-import { examTypes, type ExamType, type Language } from "@/lib/db/schema";
+import type { Language } from "@/lib/db/schema";
 import type { Theme } from "@/lib/theme-storage";
 
 type SettingsSheetProps = {
@@ -48,11 +48,6 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
   const { toast } = useToast();
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [name, setName] = useState(user.name);
-  const [examType, setExamType] = useState<ExamType>(user.examType as ExamType);
-  const [examDate, setExamDate] = useState(
-    user.examDate ? user.examDate.slice(0, 10) : ""
-  );
   const [reminderEnabled, setReminderEnabled] = useState(user.reminderEnabled);
   const [reminderTime, setReminderTime] = useState(user.reminderTime ?? "20:00");
   const [language, setLanguage] = useState<Language>(user.language);
@@ -70,9 +65,6 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          examType,
-          examDate: examDate ? new Date(examDate).toISOString() : null,
           reminderEnabled,
           reminderTime: reminderEnabled ? reminderTime : null,
           language,
@@ -83,13 +75,13 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
       if (isProfileComplete(updated)) {
         onUserUpdate(updated);
       }
-      toast({ title: "Profile updated" });
+      toast({ title: "Preferences updated" });
       onOpenChange(false);
       if (updated.language !== user.language) {
         window.location.reload();
       }
     } catch {
-      toast({ title: "Could not save profile", variant: "destructive" });
+      toast({ title: "Could not save preferences", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -117,45 +109,11 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
               <Settings className="h-5 w-5" />
               {t("settings.title")}
             </SheetTitle>
-            <SheetDescription>Manage your profile and preferences.</SheetDescription>
+            <SheetDescription>Manage your preferences.</SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="settings-name">Your name</Label>
-                <Input
-                  id="settings-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={80}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="settings-exam">Exam</Label>
-                <Select value={examType} onValueChange={(value) => setExamType(value as ExamType)}>
-                  <SelectTrigger id="settings-exam">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {examTypes.map((exam) => (
-                      <SelectItem key={exam} value={exam}>
-                        {exam}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="settings-exam-date">{t("settings.examDate")}</Label>
-                <Input
-                  id="settings-exam-date"
-                  type="date"
-                  value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">{t("settings.examDateHint")}</p>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="settings-language">{t("settings.language")}</Label>
                 <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
@@ -196,7 +154,7 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
               <Button
                 className="w-full bg-gradient-purple"
                 onClick={() => void handleSave()}
-                disabled={saving || !name.trim() || !examType}
+                disabled={saving}
               >
                 {saving ? "Saving..." : t("settings.save")}
               </Button>

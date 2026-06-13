@@ -67,6 +67,7 @@ export async function getSession(): Promise<SessionUser | null> {
     reminderEnabled: row.reminderEnabled,
     reminderTime: row.reminderTime,
     language: row.language,
+    avatarUrl: row.avatarUrl,
   });
 }
 

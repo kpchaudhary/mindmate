@@ -10,6 +10,7 @@ export type SessionUser = {
   reminderEnabled: boolean;
   reminderTime: string | null;
   language: Language;
+  avatarUrl: string | null;
 };
 
 export function isProfileComplete(
@@ -28,6 +29,7 @@ export function toSessionUser(user: {
   reminderEnabled?: boolean | null;
   reminderTime?: string | null;
   language?: string | null;
+  avatarUrl?: string | null;
 }): SessionUser {
   return {
     id: user.id,
@@ -39,5 +41,6 @@ export function toSessionUser(user: {
     reminderEnabled: user.reminderEnabled ?? false,
     reminderTime: user.reminderTime ?? null,
     language: (user.language === "hi" ? "hi" : "en") as Language,
+    avatarUrl: user.avatarUrl ?? null,
   };
 }

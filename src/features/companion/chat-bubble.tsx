@@ -3,18 +3,19 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { MarkdownLite } from "@/lib/markdown-lite";
-import { getUserInitials } from "@/lib/user-initials";
 import { cn } from "@/lib/utils";
 
 type ChatBubbleProps = {
   role: "user" | "assistant";
   content: string;
   userName: string;
+  avatarUrl?: string | null;
   timestamp?: string;
 };
 
-export function ChatBubble({ role, content, userName, timestamp }: ChatBubbleProps) {
+export function ChatBubble({ role, content, userName, avatarUrl, timestamp }: ChatBubbleProps) {
   const isUser = role === "user";
   const reducedMotion = useReducedMotion();
 
@@ -59,17 +60,15 @@ export function ChatBubble({ role, content, userName, timestamp }: ChatBubblePro
 
   return (
     <div className={cn("flex gap-2", isUser ? "flex-row-reverse" : "flex-row")}>
-      <Avatar className="h-8 w-8 shrink-0">
-        {isUser ? (
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-            {getUserInitials(userName)}
-          </AvatarFallback>
-        ) : (
+      {isUser ? (
+        <UserAvatar name={userName} avatarUrl={avatarUrl} className="h-8 w-8 shrink-0" />
+      ) : (
+        <Avatar className="h-8 w-8 shrink-0">
           <AvatarFallback className="bg-gradient-purple text-primary-foreground">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
           </AvatarFallback>
-        )}
-      </Avatar>
+        </Avatar>
+      )}
       {wrapped}
     </div>
   );

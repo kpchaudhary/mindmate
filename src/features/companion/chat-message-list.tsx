@@ -15,6 +15,7 @@ export type ChatMessage = {
 type ChatMessageListProps = {
   messages: ChatMessage[];
   userName: string;
+  avatarUrl?: string | null;
   loading?: boolean;
   initialLoading?: boolean;
   emptyState?: React.ReactNode;
@@ -32,6 +33,7 @@ function MessageSkeleton() {
 export function ChatMessageList({
   messages,
   userName,
+  avatarUrl,
   loading,
   initialLoading,
   emptyState,
@@ -63,6 +65,7 @@ export function ChatMessageList({
           role={msg.role}
           content={msg.content}
           userName={userName}
+          avatarUrl={avatarUrl}
           timestamp={msg.createdAt ? formatRelativeTime(msg.createdAt) : undefined}
         />
       ))}

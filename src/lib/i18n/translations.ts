@@ -4,6 +4,7 @@ export type TranslationKey =
   | "nav.dashboard"
   | "nav.journal"
   | "nav.companion"
+  | "nav.profile"
   | "dashboard.greeting"
   | "dashboard.subtitle"
   | "dashboard.totalEntries"
@@ -53,6 +54,29 @@ export type TranslationKey =
   | "settings.reminderTime"
   | "settings.language"
   | "settings.save"
+  | "profile.title"
+  | "profile.details"
+  | "profile.name"
+  | "profile.exam"
+  | "profile.examDate"
+  | "profile.examDateHint"
+  | "profile.avatarUrl"
+  | "profile.avatarUrlHint"
+  | "profile.save"
+  | "profile.saving"
+  | "profile.saved"
+  | "profile.saveError"
+  | "profile.changePassword"
+  | "profile.changePasswordHint"
+  | "profile.currentPassword"
+  | "profile.newPassword"
+  | "profile.confirmPassword"
+  | "profile.updatePassword"
+  | "profile.changingPassword"
+  | "profile.passwordChanged"
+  | "profile.passwordWrong"
+  | "profile.passwordMismatch"
+  | "profile.passwordChangeError"
   | "onboarding.examDate"
   | "onboarding.examDateOptional";
 
@@ -60,6 +84,7 @@ const en: Record<TranslationKey, string> = {
   "nav.dashboard": "Dashboard",
   "nav.journal": "Journal",
   "nav.companion": "Companion",
+  "nav.profile": "Profile",
   "dashboard.greeting": "Good morning",
   "dashboard.subtitle": "prep dashboard — patterns and trends from your journals.",
   "dashboard.totalEntries": "Total entries",
@@ -112,6 +137,29 @@ const en: Record<TranslationKey, string> = {
   "settings.reminderTime": "Reminder time",
   "settings.language": "Language",
   "settings.save": "Save changes",
+  "profile.title": "Profile",
+  "profile.details": "Profile details",
+  "profile.name": "Your name",
+  "profile.exam": "Exam",
+  "profile.examDate": "Exam date",
+  "profile.examDateHint": "Optional — enables countdown on dashboard",
+  "profile.avatarUrl": "Profile image URL",
+  "profile.avatarUrlHint": "Paste a link to your photo — leave blank to use initials",
+  "profile.save": "Save profile",
+  "profile.saving": "Saving...",
+  "profile.saved": "Profile updated",
+  "profile.saveError": "Could not save profile",
+  "profile.changePassword": "Change password",
+  "profile.changePasswordHint": "Use at least 8 characters for your new password.",
+  "profile.currentPassword": "Current password",
+  "profile.newPassword": "New password",
+  "profile.confirmPassword": "Confirm new password",
+  "profile.updatePassword": "Update password",
+  "profile.changingPassword": "Updating...",
+  "profile.passwordChanged": "Password updated",
+  "profile.passwordWrong": "Current password is incorrect",
+  "profile.passwordMismatch": "New passwords do not match",
+  "profile.passwordChangeError": "Could not change password",
   "onboarding.examDate": "When is your exam?",
   "onboarding.examDateOptional": "Optional — you can add this later in settings",
 };
@@ -120,6 +168,7 @@ const hi: Record<TranslationKey, string> = {
   "nav.dashboard": "डैशबोर्ड",
   "nav.journal": "जर्नल",
   "nav.companion": "साथी",
+  "nav.profile": "प्रोफ़ाइल",
   "dashboard.greeting": "नमस्ते",
   "dashboard.subtitle": "प्रेप डैशबोर्ड — आपके जर्नल से पैटर्न और ट्रेंड।",
   "dashboard.totalEntries": "कुल एंट्री",
@@ -172,6 +221,29 @@ const hi: Record<TranslationKey, string> = {
   "settings.reminderTime": "रिमाइंडर का समय",
   "settings.language": "भाषा",
   "settings.save": "बदलाव सहेजें",
+  "profile.title": "प्रोफ़ाइल",
+  "profile.details": "प्रोफ़ाइल विवरण",
+  "profile.name": "आपका नाम",
+  "profile.exam": "एग्जाम",
+  "profile.examDate": "एग्जाम की तारीख",
+  "profile.examDateHint": "वैकल्पिक — डैशबोर्ड पर काउंटडाउन दिखेगा",
+  "profile.avatarUrl": "प्रोफ़ाइल फोटो URL",
+  "profile.avatarUrlHint": "अपनी फोटो का लिंक पेस्ट करें — खाली छोड़ने पर initials दिखेंगे",
+  "profile.save": "प्रोफ़ाइल सहेजें",
+  "profile.saving": "सहेज रहे हैं...",
+  "profile.saved": "प्रोफ़ाइल अपडेट हो गई",
+  "profile.saveError": "प्रोफ़ाइल सहेज नहीं सके",
+  "profile.changePassword": "पासवर्ड बदलें",
+  "profile.changePasswordHint": "नए पासवर्ड के लिए कम से कम 8 अक्षर इस्तेमाल करें।",
+  "profile.currentPassword": "वर्तमान पासवर्ड",
+  "profile.newPassword": "नया पासवर्ड",
+  "profile.confirmPassword": "नया पासवर्ड दोबारा",
+  "profile.updatePassword": "पासवर्ड अपडेट करें",
+  "profile.changingPassword": "अपडेट हो रहा है...",
+  "profile.passwordChanged": "पासवर्ड अपडेट हो गया",
+  "profile.passwordWrong": "वर्तमान पासवर्ड गलत है",
+  "profile.passwordMismatch": "नए पासवर्ड मेल नहीं खाते",
+  "profile.passwordChangeError": "पासवर्ड बदल नहीं सके",
   "onboarding.examDate": "आपका एग्जाम कब है?",
   "onboarding.examDateOptional": "वैकल्पिक — बाद में सेटिंग्स में जोड़ सकते हैं",
 };

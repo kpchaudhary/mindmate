@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   reminderEnabled: boolean("reminder_enabled").default(false).notNull(),
   reminderTime: text("reminder_time"),
   language: text("language").default("en").notNull(),
+  avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

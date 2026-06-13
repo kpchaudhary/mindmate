@@ -9,8 +9,8 @@ import {
   MessageCircle,
   Settings,
   Sparkles,
+  User,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,10 +24,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UserAvatar } from "@/components/user-avatar";
 import { SettingsSheet } from "@/features/settings/settings-sheet";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { getUserInitials } from "@/lib/user-initials";
 import type { SessionUser } from "@/lib/auth/types";
 
 const NAV_HREFS = [
@@ -118,17 +118,19 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {getUserInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User className="h-4 w-4" />
+                  {t("nav.profile")}
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                 <Settings className="h-4 w-4" />
-                Settings
+                {t("settings.title")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setSettingsOpen(true)}>

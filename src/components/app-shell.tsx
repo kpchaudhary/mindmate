@@ -14,6 +14,7 @@ import type { ExamType, Language } from "@/lib/db/schema";
 type CompleteSessionUser = SessionUser & { name: string; examType: ExamType };
 
 const UserContext = createContext<CompleteSessionUser | null>(null);
+const UserUpdateContext = createContext<((user: SessionUser) => void) | null>(null);
 
 export function useUser(): CompleteSessionUser {
   const user = useContext(UserContext);
@@ -21,6 +22,14 @@ export function useUser(): CompleteSessionUser {
     throw new Error("useUser must be used within AppShell");
   }
   return user;
+}
+
+export function useUpdateUser(): (user: SessionUser) => void {
+  const update = useContext(UserUpdateContext);
+  if (!update) {
+    throw new Error("useUpdateUser must be used within AppShell");
+  }
+  return update;
 }
 
 type AppShellProps = {
@@ -67,16 +76,18 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <UserContext.Provider value={user}>
-      <LanguageProvider language={user.language as Language}>
-        <ReminderScheduler user={user} />
-        <ServiceWorkerRegister />
-        <div className="min-h-screen bg-background">
-          <AppNav user={user} onUserUpdate={handleUserUpdate} />
-          <main className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
-            <PageTransition>{children}</PageTransition>
-          </main>
-        </div>
-      </LanguageProvider>
+      <UserUpdateContext.Provider value={handleUserUpdate}>
+        <LanguageProvider language={user.language as Language}>
+          <ReminderScheduler user={user} />
+          <ServiceWorkerRegister />
+          <div className="min-h-screen bg-background">
+            <AppNav user={user} onUserUpdate={handleUserUpdate} />
+            <main className="mx-auto max-w-6xl px-4 py-8 pb-24 md:pb-8">
+              <PageTransition>{children}</PageTransition>
+            </main>
+          </div>
+        </LanguageProvider>
+      </UserUpdateContext.Provider>
     </UserContext.Provider>
   );
 }
