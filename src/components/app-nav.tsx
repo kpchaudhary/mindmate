@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Settings,
   Sparkles,
   User,
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { SettingsSheet } from "@/features/settings/settings-sheet";
-import { CompanionChatTrigger } from "@/features/companion/companion-chat-trigger";
 import { useCompanionChat } from "@/features/companion/companion-chat-context";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -83,11 +83,48 @@ function NavLink({
   );
 }
 
+function CompanionNavButton({
+  label,
+  active,
+  showLabel = true,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  showLabel?: boolean;
+  onClick: () => void;
+}) {
+  const button = (
+    <button
+      type="button"
+      aria-current={active ? "page" : undefined}
+      onClick={onClick}
+      className={cn(
+        showLabel
+          ? "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors"
+          : "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
+        active
+          ? showLabel
+            ? "line-bg font-medium text-primary"
+            : "text-primary font-medium"
+          : showLabel
+            ? "text-muted-foreground hover:text-foreground"
+            : "text-muted-foreground"
+      )}
+    >
+      <MessageCircle className={showLabel ? "h-4 w-4" : "h-5 w-5"} aria-hidden="true" />
+      <span>{label}</span>
+    </button>
+  );
+
+  return button;
+}
+
 export function AppNav({ user, onUserUpdate }: AppNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { openChat } = useCompanionChat();
+  const { openChat, isOpen: chatOpen } = useCompanionChat();
   const { t } = useLanguage();
 
   async function handleLogout() {
@@ -96,6 +133,7 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
   }
 
   const navItems = NAV_HREFS.map((item) => ({ ...item, label: t(item.key) }));
+  const companionLabel = t("nav.companion");
 
   return (
     <>
@@ -123,11 +161,14 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
                 active={pathname === href}
               />
             ))}
+            <CompanionNavButton
+              label={companionLabel}
+              active={chatOpen}
+              onClick={openChat}
+            />
           </nav>
 
-          <div className="flex items-center gap-1">
-            <CompanionChatTrigger onClick={openChat} />
-            <DropdownMenu>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
                 <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
@@ -151,7 +192,6 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          </div>
         </div>
       </header>
 
@@ -177,6 +217,12 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
               </Link>
             );
           })}
+          <CompanionNavButton
+            label={companionLabel}
+            active={chatOpen}
+            showLabel={false}
+            onClick={openChat}
+          />
         </div>
       </nav>
 
