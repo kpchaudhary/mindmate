@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Brain, Heart, Lightbulb, Sparkles, Target } from "lucide-react";
 import { BurnoutGauge } from "@/components/ui/burnout-gauge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { SafetyBanner } from "@/components/ui/safety-banner";
 
 export type InsightData = {

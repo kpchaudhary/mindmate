@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Brain, BarChart3, MessageCircle } from "lucide-react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { OnboardingForm } from "@/features/onboarding/onboarding-form";
-import { getStoredUser, type StoredUser } from "@/lib/user-storage";
+import { getStoredUser } from "@/lib/user-storage";
 
 const BENEFITS = [
   { icon: Brain, text: "Uncover hidden stress triggers from your journal entries" },
@@ -27,7 +27,7 @@ export default function HomePage() {
     setChecking(false);
   }, [router]);
 
-  function handleComplete(_user: StoredUser) {
+  function handleComplete() {
     router.push("/insights");
   }
 

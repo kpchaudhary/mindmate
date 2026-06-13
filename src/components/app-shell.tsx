@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppNav, MobileNavSpacer } from "@/components/app-nav";
+import { AppNav } from "@/components/app-nav";
 import { LoadingScreen } from "@/components/loading-screen";
 import { PageTransition } from "@/components/page-transition";
 import { getStoredUser, type StoredUser } from "@/lib/user-storage";
