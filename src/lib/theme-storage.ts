@@ -3,10 +3,10 @@ export type Theme = "light" | "dark" | "system";
 const THEME_KEY = "mindmate_theme";
 
 export function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === "light" || stored === "dark" || stored === "system") return stored;
-  return "system";
+  return "light";
 }
 
 export function setStoredTheme(theme: Theme) {
