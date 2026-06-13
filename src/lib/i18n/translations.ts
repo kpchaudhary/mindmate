@@ -90,6 +90,13 @@ export type TranslationKey =
   | "profile.passwordWrong"
   | "profile.passwordMismatch"
   | "profile.passwordChangeError"
+  | "profile.edit"
+  | "profile.cancel"
+  | "profile.email"
+  | "profile.password"
+  | "profile.notSet"
+  | "profile.customPhoto"
+  | "profile.usingInitials"
   | "onboarding.examDate"
   | "onboarding.examDateOptional"
   | "dashboard.moodInsights"
@@ -223,6 +230,13 @@ const en: Record<TranslationKey, string> = {
   "profile.passwordWrong": "Current password is incorrect",
   "profile.passwordMismatch": "New passwords do not match",
   "profile.passwordChangeError": "Could not change password",
+  "profile.edit": "Edit profile",
+  "profile.cancel": "Cancel",
+  "profile.email": "Email",
+  "profile.password": "Password",
+  "profile.notSet": "Not set",
+  "profile.customPhoto": "Custom photo",
+  "profile.usingInitials": "Using initials",
   "onboarding.examDate": "When is your exam?",
   "onboarding.examDateOptional": "Optional — you can add this later in settings",
   "dashboard.moodInsights": "Mood Insights",
@@ -358,6 +372,13 @@ const hi: Record<TranslationKey, string> = {
   "profile.passwordWrong": "वर्तमान पासवर्ड गलत है",
   "profile.passwordMismatch": "नए पासवर्ड मेल नहीं खाते",
   "profile.passwordChangeError": "पासवर्ड बदल नहीं सके",
+  "profile.edit": "प्रोफ़ाइल संपादित करें",
+  "profile.cancel": "रद्द करें",
+  "profile.email": "ईमेल",
+  "profile.password": "पासवर्ड",
+  "profile.notSet": "सेट नहीं",
+  "profile.customPhoto": "कस्टम फोटो",
+  "profile.usingInitials": "Initials इस्तेमाल हो रहे हैं",
   "onboarding.examDate": "आपका एग्जाम कब है?",
   "onboarding.examDateOptional": "वैकल्पिक — बाद में सेटिंग्स में जोड़ सकते हैं",
   "dashboard.moodInsights": "मूड इनसाइट्स",
