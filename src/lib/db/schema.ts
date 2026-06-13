@@ -14,10 +14,31 @@ export type ExamType = (typeof examTypes)[number];
 
 export const burnoutLevelEnum = pgEnum("burnout_level", ["low", "medium", "high"]);
 
+export const languages = ["en", "hi"] as const;
+export type Language = (typeof languages)[number];
+
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  examType: text("exam_type").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name"),
+  examType: text("exam_type"),
+  examDate: timestamp("exam_date", { withTimezone: true }),
+  streakCount: integer("streak_count").default(0).notNull(),
+  lastJournalDate: timestamp("last_journal_date", { withTimezone: true }),
+  reminderEnabled: boolean("reminder_enabled").default(false).notNull(),
+  reminderTime: text("reminder_time"),
+  language: text("language").default("en").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sessions = pgTable("sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -28,6 +49,7 @@ export const journalEntries = pgTable("journal_entries", {
     .references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   moodScore: integer("mood_score").notNull(),
+  mockScore: integer("mock_score"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -62,6 +84,14 @@ export const chatMessages = pgTable("chat_messages", {
 export const usersRelations = relations(users, ({ many }) => ({
   journalEntries: many(journalEntries),
   chatMessages: many(chatMessages),
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }));
 
 export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({

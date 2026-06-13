@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { examTypes } from "@/lib/db/schema";
-import { setStoredUser, type StoredUser } from "@/lib/user-storage";
+import type { SessionUser } from "@/lib/auth/types";
 
 const EXAM_DESCRIPTIONS: Record<string, string> = {
   NEET: "MindMate tracks burnout from long study hours and helps you manage exam anxiety before medical entrance tests.",
@@ -27,7 +27,7 @@ const EXAM_DESCRIPTIONS: Record<string, string> = {
 };
 
 type OnboardingFormProps = {
-  onComplete: (user: StoredUser) => void;
+  onComplete: (user: SessionUser) => void;
 };
 
 export function OnboardingForm({ onComplete }: OnboardingFormProps) {
@@ -35,6 +35,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [examType, setExamType] = useState<string>("");
+  const [examDate, setExamDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,18 +45,22 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/onboarding", {
-        method: "POST",
+      const payload: Record<string, string> = { name, examType };
+      if (examDate) {
+        payload.examDate = new Date(examDate).toISOString();
+      }
+
+      const response = await fetch("/api/user", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, examType }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create profile");
+        throw new Error("Failed to update profile");
       }
 
-      const user = (await response.json()) as StoredUser;
-      setStoredUser(user);
+      const user = (await response.json()) as SessionUser;
       toast({
         title: `Welcome, ${user.name}!`,
         description: "Your dashboard is ready.",
@@ -138,6 +143,19 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                   {EXAM_DESCRIPTIONS[examType]}
                 </p>
               )}
+              <div className="space-y-2">
+                <Label htmlFor="exam-date">When is your exam? (optional)</Label>
+                <Input
+                  id="exam-date"
+                  type="date"
+                  value={examDate}
+                  onChange={(e) => setExamDate(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enables exam countdown on your dashboard
+                </p>
+              </div>
             </>
           )}
 

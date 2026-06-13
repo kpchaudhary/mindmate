@@ -28,17 +28,23 @@ GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-3. **Push database schema**
+3. **Apply database schema**
+
+For an **existing** database (recommended — safe, additive only):
 
 ```bash
-npm run db:push
+npm run db:migrate:features
 ```
 
-Or run the SQL migration manually on your VPS Postgres:
+For a **brand-new** empty database you can use:
 
 ```bash
 psql $DATABASE_URL -f drizzle/0000_init.sql
+psql $DATABASE_URL -f drizzle/0001_auth.sql
+npm run db:migrate:features
 ```
+
+> **Do not run `npm run db:push` on an existing database.** It may try to drop `__drizzle_migrations` and alter primary keys, causing data-loss warnings and errors like `column "id" is in a primary key`.
 
 4. **Run dev server**
 
@@ -47,6 +53,17 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Testing
+
+```bash
+npm test          # Vitest unit + API tests
+npm run test:e2e  # Playwright E2E (requires DATABASE_URL + dev server)
+```
+
+E2E covers the demo flow: register → onboarding → journal → insights → companion. AI routes are intercepted in tests so no Gemini API key is needed for E2E.
+
+CI runs lint, unit tests, and E2E (with a Postgres service container) on every push and pull request.
 
 ## Demo Script (15 seconds per screen)
 

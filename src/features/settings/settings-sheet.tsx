@@ -31,40 +31,63 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/components/theme-provider";
 import { useToast } from "@/hooks/use-toast";
-import { examTypes } from "@/lib/db/schema";
-import { clearStoredUser, setStoredUser, type StoredUser } from "@/lib/user-storage";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { isProfileComplete, type SessionUser } from "@/lib/auth/types";
+import { examTypes, type ExamType, type Language } from "@/lib/db/schema";
 import type { Theme } from "@/lib/theme-storage";
 
 type SettingsSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: StoredUser;
-  onUserUpdate: (user: StoredUser) => void;
+  user: SessionUser & { name: string; examType: string };
+  onUserUpdate: (user: SessionUser & { name: string; examType: string }) => void;
 };
 
 export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: SettingsSheetProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState(user.name);
-  const [examType, setExamType] = useState(user.examType);
+  const [examType, setExamType] = useState<ExamType>(user.examType as ExamType);
+  const [examDate, setExamDate] = useState(
+    user.examDate ? user.examDate.slice(0, 10) : ""
+  );
+  const [reminderEnabled, setReminderEnabled] = useState(user.reminderEnabled);
+  const [reminderTime, setReminderTime] = useState(user.reminderTime ?? "20:00");
+  const [language, setLanguage] = useState<Language>(user.language);
   const [saving, setSaving] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   async function handleSave() {
     setSaving(true);
     try {
+      if (reminderEnabled && typeof Notification !== "undefined" && Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+
       const response = await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, name, examType }),
+        body: JSON.stringify({
+          name,
+          examType,
+          examDate: examDate ? new Date(examDate).toISOString() : null,
+          reminderEnabled,
+          reminderTime: reminderEnabled ? reminderTime : null,
+          language,
+        }),
       });
       if (!response.ok) throw new Error("Failed");
-      const updated = (await response.json()) as StoredUser;
-      setStoredUser(updated);
-      onUserUpdate(updated);
+      const updated = (await response.json()) as SessionUser;
+      if (isProfileComplete(updated)) {
+        onUserUpdate(updated);
+      }
       toast({ title: "Profile updated" });
       onOpenChange(false);
+      if (updated.language !== user.language) {
+        window.location.reload();
+      }
     } catch {
       toast({ title: "Could not save profile", variant: "destructive" });
     } finally {
@@ -72,11 +95,11 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
     }
   }
 
-  function handleLogout() {
-    clearStoredUser();
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
     setLogoutOpen(false);
     onOpenChange(false);
-    router.replace("/");
+    router.replace("/login");
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -92,7 +115,7 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Settings
+              {t("settings.title")}
             </SheetTitle>
             <SheetDescription>Manage your profile and preferences.</SheetDescription>
           </SheetHeader>
@@ -110,7 +133,7 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
               </div>
               <div className="space-y-2">
                 <Label htmlFor="settings-exam">Exam</Label>
-                <Select value={examType} onValueChange={setExamType}>
+                <Select value={examType} onValueChange={(value) => setExamType(value as ExamType)}>
                   <SelectTrigger id="settings-exam">
                     <SelectValue />
                   </SelectTrigger>
@@ -123,12 +146,59 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="settings-exam-date">{t("settings.examDate")}</Label>
+                <Input
+                  id="settings-exam-date"
+                  type="date"
+                  value={examDate}
+                  onChange={(e) => setExamDate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">{t("settings.examDateHint")}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settings-language">{t("settings.language")}</Label>
+                <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                  <SelectTrigger id="settings-language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="hi">Hindi / Hinglish</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="settings-reminder">{t("settings.reminder")}</Label>
+                  <Button
+                    id="settings-reminder"
+                    type="button"
+                    variant={reminderEnabled ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setReminderEnabled(!reminderEnabled)}
+                  >
+                    {reminderEnabled ? "On" : "Off"}
+                  </Button>
+                </div>
+                {reminderEnabled && (
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-reminder-time">{t("settings.reminderTime")}</Label>
+                    <Input
+                      id="settings-reminder-time"
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => setReminderTime(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
               <Button
                 className="w-full bg-gradient-purple"
                 onClick={() => void handleSave()}
                 disabled={saving || !name.trim() || !examType}
               >
-                {saving ? "Saving..." : "Save changes"}
+                {saving ? "Saving..." : t("settings.save")}
               </Button>
             </div>
 
@@ -171,14 +241,14 @@ export function SettingsSheet({ open, onOpenChange, user, onUserUpdate }: Settin
           <DialogHeader>
             <DialogTitle>Sign out?</DialogTitle>
             <DialogDescription>
-              You&apos;ll need to set up your profile again to continue using MindMate.
+              You&apos;ll need to sign in again to continue using MindMate.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLogoutOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleLogout}>
+            <Button variant="destructive" onClick={() => void handleLogout()}>
               Sign out
             </Button>
           </DialogFooter>

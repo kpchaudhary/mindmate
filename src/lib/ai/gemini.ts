@@ -2,8 +2,12 @@ import {
   journalAnalysisSchema,
   type JournalAnalysis,
   analysisResponseSchema,
+  weeklySummarySchema,
+  type WeeklySummary,
+  weeklySummaryResponseSchema,
   STRESS_TRIGGERS,
 } from "./schemas";
+import type { Language } from "@/lib/db/schema";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -30,16 +34,29 @@ SAFETY RULES (mandatory):
 - Provide practical, exam-context-aware wellness support only.
 `.trim();
 
+function languageInstruction(language: Language): string {
+  if (language === "hi") {
+    return `
+LANGUAGE: Respond in Hinglish (mix of Hindi and English). Use Devanagari script for Hindi words.
+Keep exam-specific terms in English (NEET, JEE, mock test, etc.).
+Tone should feel natural to Indian students — warm, relatable, not overly formal.
+`.trim();
+  }
+  return "";
+}
+
 type GeminiGenerateParams = {
   systemInstruction: string;
   userPrompt: string;
-  jsonSchema?: typeof analysisResponseSchema;
+  jsonSchema?: typeof analysisResponseSchema | typeof weeklySummaryResponseSchema;
+  language?: Language;
 };
 
 async function generateWithGemini({
   systemInstruction,
   userPrompt,
   jsonSchema,
+  language = "en",
 }: GeminiGenerateParams): Promise<string> {
   const model = getModel();
   const url = `${GEMINI_API_URL}/${model}:generateContent?key=${getApiKey()}`;
@@ -54,12 +71,17 @@ async function generateWithGemini({
     generationConfig.responseSchema = jsonSchema;
   }
 
+  const langNote = languageInstruction(language);
+  const fullSystemInstruction = langNote
+    ? `${SAFETY_INSTRUCTIONS}\n\n${langNote}\n\n${systemInstruction}`
+    : `${SAFETY_INSTRUCTIONS}\n\n${systemInstruction}`;
+
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: {
-        parts: [{ text: `${SAFETY_INSTRUCTIONS}\n\n${systemInstruction}` }],
+        parts: [{ text: fullSystemInstruction }],
       },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig,
@@ -96,6 +118,7 @@ export type AnalysisContext = {
     burnoutLevel: string | null;
   }>;
   triggerFrequency: Record<string, number>;
+  language?: Language;
 };
 
 export async function analyzeJournal(context: AnalysisContext): Promise<JournalAnalysis> {
@@ -144,6 +167,7 @@ Return JSON with: mood, emotionalPatterns, stressTriggers, copingStrategy, motiv
     systemInstruction,
     userPrompt,
     jsonSchema: analysisResponseSchema,
+    language: context.language,
   });
 
   const parsed = journalAnalysisSchema.parse(JSON.parse(raw));
@@ -159,6 +183,7 @@ export type CompanionContext = {
   burnoutLevel: string;
   recentRecommendation: string | null;
   chatHistory: Array<{ role: "user" | "assistant"; content: string }>;
+  language?: Language;
 };
 
 export async function generateCompanionReply(context: CompanionContext): Promise<string> {
@@ -203,5 +228,64 @@ ${context.message}
 Reply as MindMate companion.
 `.trim();
 
-  return generateWithGemini({ systemInstruction, userPrompt });
+  return generateWithGemini({ systemInstruction, userPrompt, language: context.language });
+}
+
+export type WeeklySummaryContext = {
+  studentName: string;
+  examType: string;
+  entries: Array<{
+    date: string;
+    moodScore: number;
+    mood: string;
+    triggers: string[];
+    burnoutLevel: string;
+    content: string;
+  }>;
+  triggerFrequency: Record<string, number>;
+  language?: Language;
+};
+
+export async function generateWeeklySummary(
+  context: WeeklySummaryContext
+): Promise<WeeklySummary> {
+  const entriesText = context.entries
+    .map(
+      (e, i) =>
+        `Day ${i + 1} (${e.date}): mood=${e.mood} (${e.moodScore}/5), burnout=${e.burnoutLevel}, triggers=${e.triggers.join(", ")}, excerpt="${e.content.slice(0, 100)}..."`
+    )
+    .join("\n");
+
+  const triggerStats = Object.entries(context.triggerFrequency)
+    .filter(([, count]) => count > 0)
+    .map(([trigger, count]) => `${trigger}: ${count}x`)
+    .join(", ");
+
+  const systemInstruction = `
+Summarize the student's wellness journey over the past week.
+Reveal one pattern they may not have noticed themselves.
+Be specific to their ${context.examType} prep context.
+Keep summary to 2-3 sentences. actionableInsight should be one concrete, doable step for this week.
+`.trim();
+
+  const userPrompt = `
+Student: ${context.studentName}
+Exam: ${context.examType}
+
+This week's journal entries:
+${entriesText}
+
+Trigger frequency: ${triggerStats || "none yet"}
+
+Return JSON with: summary (2-3 sentences reviewing the week), actionableInsight (one specific action for this week).
+`.trim();
+
+  const raw = await generateWithGemini({
+    systemInstruction,
+    userPrompt,
+    jsonSchema: weeklySummaryResponseSchema,
+    language: context.language,
+  });
+
+  return weeklySummarySchema.parse(JSON.parse(raw));
 }

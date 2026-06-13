@@ -23,19 +23,26 @@ export const journalAnalysisSchema = z.object({
 
 export type JournalAnalysis = z.infer<typeof journalAnalysisSchema>;
 
+export const weeklySummarySchema = z.object({
+  summary: z.string().min(1),
+  actionableInsight: z.string().min(1),
+});
+
+export type WeeklySummary = z.infer<typeof weeklySummarySchema>;
+
 export const onboardingSchema = z.object({
   name: z.string().trim().min(1).max(80),
   examType: z.enum(["NEET", "JEE", "CUET", "CAT", "GATE", "UPSC"]),
+  examDate: z.string().datetime().optional().nullable(),
 });
 
 export const journalRequestSchema = z.object({
-  userId: z.string().uuid(),
   content: z.string().trim().min(10).max(5000),
   moodScore: z.number().int().min(1).max(5),
+  mockScore: z.number().int().min(0).max(100).optional().nullable(),
 });
 
 export const companionRequestSchema = z.object({
-  userId: z.string().uuid(),
   message: z.string().trim().min(1).max(2000),
 });
 
@@ -63,4 +70,13 @@ export const analysisResponseSchema = {
     "burnoutReasoning",
     "riskFlag",
   ],
+} as const;
+
+export const weeklySummaryResponseSchema = {
+  type: "object",
+  properties: {
+    summary: { type: "string" },
+    actionableInsight: { type: "string" },
+  },
+  required: ["summary", "actionableInsight"],
 } as const;

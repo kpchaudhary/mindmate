@@ -9,20 +9,23 @@ import {
   ChatMessageList,
   type ChatMessage,
 } from "@/features/companion/chat-message-list";
-import type { StoredUser } from "@/lib/user-storage";
+import { useLanguage } from "@/lib/i18n/language-context";
+import type { SessionUser } from "@/lib/auth/types";
 
-const PROMPT_CHIPS = [
+const DEFAULT_CHIPS = [
   "I'm anxious about tomorrow's mock test",
   "Help me unwind after a long study day",
   "I feel behind compared to my friends",
 ];
 
 type CompanionChatProps = {
-  user: StoredUser;
+  user: SessionUser & { name: string; examType: string };
 };
 
 export function CompanionChat({ user }: CompanionChatProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [promptChips, setPromptChips] = useState<string[]>(DEFAULT_CHIPS);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -31,19 +34,23 @@ export function CompanionChat({ user }: CompanionChatProps) {
   useEffect(() => {
     async function loadHistory() {
       try {
-        const response = await fetch(`/api/companion?userId=${user.id}`);
+        const response = await fetch("/api/companion");
         if (response.ok) {
           const data = (await response.json()) as {
             messages: Array<ChatMessage & { createdAt?: string }>;
+            promptChips?: string[];
           };
           setMessages(data.messages);
+          if (data.promptChips?.length) {
+            setPromptChips(data.promptChips);
+          }
         }
       } finally {
         setInitialLoading(false);
       }
     }
     void loadHistory();
-  }, [user.id]);
+  }, []);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +69,7 @@ export function CompanionChat({ user }: CompanionChatProps) {
       const response = await fetch("/api/companion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, message: userMessage }),
+        body: JSON.stringify({ message: userMessage }),
       });
 
       if (!response.ok) throw new Error("Failed");
@@ -82,11 +89,10 @@ export function CompanionChat({ user }: CompanionChatProps) {
   const emptyState = (
     <div className="rounded-lg border border-dashed p-6 text-center space-y-4">
       <p className="text-sm text-muted-foreground">
-        Hi {user.name}! I&apos;m here whenever prep feels overwhelming. Ask me for a coping
-        strategy, a quick mindfulness exercise, or just vent about today.
+        Hi {user.name}! {t("companion.empty")}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
-        {PROMPT_CHIPS.map((chip) => (
+        {promptChips.map((chip) => (
           <Button
             key={chip}
             variant="outline"
@@ -108,9 +114,9 @@ export function CompanionChat({ user }: CompanionChatProps) {
           <div className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
             <div>
-              <h1 className="text-base font-semibold">MindMate Companion</h1>
+              <h1 className="text-base font-semibold">{t("companion.title")}</h1>
               <p className="text-xs text-muted-foreground">
-                Context-aware support for your {user.examType} journey
+                {t("companion.subtitle")} {user.examType} journey
               </p>
             </div>
           </div>
@@ -146,7 +152,7 @@ export function CompanionChat({ user }: CompanionChatProps) {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="I'm anxious about tomorrow's mock test..."
+              placeholder={t("companion.placeholder")}
               className="min-h-[60px] flex-1 resize-none"
               maxLength={2000}
               aria-label="Message to MindMate"

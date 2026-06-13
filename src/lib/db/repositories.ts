@@ -1,30 +1,76 @@
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "./index";
 import {
+  buildConfidenceTrend,
+  buildMoodTimeline,
+  computeTriggerFrequency,
+  pickTopTrigger,
+} from "./insights";
+import {
   users,
+  sessions,
   journalEntries,
   analyses,
   chatMessages,
   type ExamType,
 } from "./schema";
 
-export const STRESS_TRIGGERS = [
-  "exam anxiety",
-  "family pressure",
-  "social comparison",
-  "burnout",
-  "sleep issues",
-  "confidence issues",
-] as const;
+export { STRESS_TRIGGERS } from "./insights";
+export type { StressTrigger } from "./insights";
 
-export type StressTrigger = (typeof STRESS_TRIGGERS)[number];
-
-export async function createUser(name: string, examType: ExamType) {
+export async function createUserWithCredentials(email: string, passwordHash: string) {
   const [user] = await getDb()
     .insert(users)
-    .values({ name, examType })
+    .values({ email, passwordHash })
     .returning();
   return user;
+}
+
+export async function getUserByEmail(email: string) {
+  const [user] = await getDb()
+    .select()
+    .from(users)
+    .where(eq(users.email, email.toLowerCase()))
+    .limit(1);
+  return user ?? null;
+}
+
+export async function createSession(userId: string, tokenHash: string, expiresAt: Date) {
+  const [session] = await getDb()
+    .insert(sessions)
+    .values({ userId, tokenHash, expiresAt })
+    .returning();
+  return session;
+}
+
+export async function getSessionByTokenHash(tokenHash: string) {
+  const [row] = await getDb()
+    .select({
+      sessionId: sessions.id,
+      userId: users.id,
+      email: users.email,
+      name: users.name,
+      examType: users.examType,
+      examDate: users.examDate,
+      streakCount: users.streakCount,
+      reminderEnabled: users.reminderEnabled,
+      reminderTime: users.reminderTime,
+      language: users.language,
+      expiresAt: sessions.expiresAt,
+    })
+    .from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .where(eq(sessions.tokenHash, tokenHash))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function deleteSession(tokenHash: string) {
+  await getDb().delete(sessions).where(eq(sessions.tokenHash, tokenHash));
+}
+
+export async function deleteSessionsForUser(userId: string) {
+  await getDb().delete(sessions).where(eq(sessions.userId, userId));
 }
 
 export async function getUserById(userId: string) {
@@ -34,20 +80,70 @@ export async function getUserById(userId: string) {
 
 export async function updateUser(
   userId: string,
-  data: { name: string; examType: ExamType }
+  data: {
+    name: string;
+    examType: ExamType;
+    examDate?: Date | null;
+    reminderEnabled?: boolean;
+    reminderTime?: string | null;
+    language?: "en" | "hi";
+  }
 ) {
   const [user] = await getDb()
     .update(users)
-    .set({ name: data.name, examType: data.examType })
+    .set({
+      name: data.name,
+      examType: data.examType,
+      ...(data.examDate !== undefined && { examDate: data.examDate }),
+      ...(data.reminderEnabled !== undefined && { reminderEnabled: data.reminderEnabled }),
+      ...(data.reminderTime !== undefined && { reminderTime: data.reminderTime }),
+      ...(data.language !== undefined && { language: data.language }),
+    })
     .where(eq(users.id, userId))
     .returning();
   return user;
+}
+
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export async function updateStreakOnJournal(userId: string) {
+  const user = await getUserById(userId);
+  if (!user) return 0;
+
+  const today = startOfDay(new Date());
+  const lastDate = user.lastJournalDate ? startOfDay(user.lastJournalDate) : null;
+
+  let newStreak = user.streakCount;
+  if (!lastDate) {
+    newStreak = 1;
+  } else {
+    const diffDays = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      newStreak = user.streakCount;
+    } else if (diffDays === 1) {
+      newStreak = user.streakCount + 1;
+    } else {
+      newStreak = 1;
+    }
+  }
+
+  await getDb()
+    .update(users)
+    .set({ streakCount: newStreak, lastJournalDate: new Date() })
+    .where(eq(users.id, userId));
+
+  return newStreak;
 }
 
 export async function createJournalWithAnalysis(input: {
   userId: string;
   content: string;
   moodScore: number;
+  mockScore?: number | null;
   analysis: {
     mood: string;
     emotions: string[];
@@ -67,6 +163,7 @@ export async function createJournalWithAnalysis(input: {
       userId: input.userId,
       content: input.content,
       moodScore: input.moodScore,
+      mockScore: input.mockScore ?? null,
     })
     .returning();
 
@@ -118,23 +215,9 @@ export async function getTriggerFrequency(userId: string) {
     .innerJoin(journalEntries, eq(journalEntries.id, analyses.entryId))
     .where(eq(journalEntries.userId, userId));
 
-  const frequency: Record<string, number> = {};
-  for (const trigger of STRESS_TRIGGERS) {
-    frequency[trigger] = 0;
-  }
-
-  for (const row of rows) {
-    const triggerList = (row.triggers as string[]) ?? [];
-    for (const trigger of triggerList) {
-      const normalized = trigger.toLowerCase();
-      const match = STRESS_TRIGGERS.find((t) => normalized.includes(t));
-      if (match) {
-        frequency[match] += 1;
-      }
-    }
-  }
-
-  return frequency;
+  return computeTriggerFrequency(
+    rows.map((row) => ({ triggers: (row.triggers as string[]) ?? null }))
+  );
 }
 
 export async function getInsightsData(userId: string) {
@@ -143,6 +226,7 @@ export async function getInsightsData(userId: string) {
       id: journalEntries.id,
       content: journalEntries.content,
       moodScore: journalEntries.moodScore,
+      mockScore: journalEntries.mockScore,
       createdAt: journalEntries.createdAt,
       mood: analyses.mood,
       emotions: analyses.emotions,
@@ -159,38 +243,66 @@ export async function getInsightsData(userId: string) {
 
   const triggerFrequency = await getTriggerFrequency(userId);
 
-  const moodTimeline = entries
+  const moodTimeline = buildMoodTimeline(
+    entries.map((entry) => ({
+      createdAt: entry.createdAt,
+      moodScore: entry.moodScore,
+      mood: entry.mood,
+      burnoutLevel: entry.burnoutLevel,
+      triggers: (entry.triggers as string[]) ?? null,
+    }))
+  );
+
+  const burnoutTrend = entries
+    .slice()
+    .reverse()
+    .slice(-14)
+    .map((entry) => ({
+      date: entry.createdAt.toISOString().slice(0, 10),
+      burnoutScore:
+        entry.burnoutLevel === "high" ? 3 : entry.burnoutLevel === "medium" ? 2 : 1,
+      burnoutLevel: entry.burnoutLevel,
+    }));
+
+  const mockScoreCorrelation = entries
+    .filter((e) => e.mockScore != null)
     .slice()
     .reverse()
     .map((entry) => ({
       date: entry.createdAt.toISOString().slice(0, 10),
+      mockScore: entry.mockScore as number,
       moodScore: entry.moodScore,
-      mood: entry.mood,
-      burnoutLevel: entry.burnoutLevel,
     }));
 
-  const topTrigger = Object.entries(triggerFrequency).sort((a, b) => b[1] - a[1])[0];
+  const topTrigger = pickTopTrigger(triggerFrequency);
 
   const recentBurnout = entries[0]?.burnoutLevel ?? "low";
 
-  const confidenceTrend = entries.slice(0, 7).map((entry) => {
-    const hasConfidenceIssue = ((entry.triggers as string[]) ?? []).some((t) =>
-      t.toLowerCase().includes("confidence")
-    );
-    return {
-      date: entry.createdAt.toISOString().slice(0, 10),
-      confidence: hasConfidenceIssue ? 1 : 5 - entry.moodScore + 1,
-    };
-  });
+  const confidenceTrend = buildConfidenceTrend(
+    entries.map((entry) => ({
+      createdAt: entry.createdAt,
+      moodScore: entry.moodScore,
+      mood: entry.mood,
+      burnoutLevel: entry.burnoutLevel,
+      triggers: (entry.triggers as string[]) ?? null,
+    }))
+  );
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const recentWeekEntries = entries.filter((e) => e.createdAt >= sevenDaysAgo);
 
   return {
     entries,
     triggerFrequency,
     moodTimeline,
-    topTrigger: topTrigger ? { name: topTrigger[0], count: topTrigger[1] } : null,
+    burnoutTrend,
+    mockScoreCorrelation,
+    topTrigger,
     recentBurnout,
-    confidenceTrend: confidenceTrend.reverse(),
+    confidenceTrend,
     totalEntries: entries.length,
+    recentWeekEntries,
   };
 }
 
@@ -239,6 +351,7 @@ export async function getJournalEntriesForUser(userId: string, limit = 50) {
       id: journalEntries.id,
       content: journalEntries.content,
       moodScore: journalEntries.moodScore,
+      mockScore: journalEntries.mockScore,
       createdAt: journalEntries.createdAt,
       mood: analyses.mood,
       emotions: analyses.emotions,

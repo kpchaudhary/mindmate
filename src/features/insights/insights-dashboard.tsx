@@ -6,6 +6,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -13,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BookOpen, MessageCircle } from "lucide-react";
+import { BookOpen, Calendar, Flame, MessageCircle, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,20 +22,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/error-state";
 import { BurnoutGauge } from "@/components/ui/burnout-gauge";
 import { getTimeGreeting } from "@/lib/greeting";
-import type { StoredUser } from "@/lib/user-storage";
+import { useLanguage } from "@/lib/i18n/language-context";
+import type { SessionUser } from "@/lib/auth/types";
 
 type InsightsData = {
   triggerFrequency: Record<string, number>;
   moodTimeline: Array<{ date: string; moodScore: number; mood: string; burnoutLevel: string }>;
+  burnoutTrend: Array<{ date: string; burnoutScore: number; burnoutLevel: string }>;
+  mockScoreCorrelation: Array<{ date: string; mockScore: number; moodScore: number }>;
   topTrigger: { name: string; count: number } | null;
   recentBurnout: "low" | "medium" | "high";
   confidenceTrend: Array<{ date: string; confidence: number }>;
   totalEntries: number;
   entries: Array<{ burnoutReasoning: string }>;
+  weeklySummary: { summary: string; actionableInsight: string } | null;
+  daysToExam: number | null;
+  streakCount: number;
 };
 
 type InsightsDashboardProps = {
-  user: StoredUser;
+  user: SessionUser & { name: string; examType: string };
 };
 
 function ChartSkeleton() {
@@ -52,6 +59,7 @@ function ChartSkeleton() {
 }
 
 export function InsightsDashboard({ user }: InsightsDashboardProps) {
+  const { t, getExamCountdownNudge } = useLanguage();
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -60,7 +68,7 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
     setLoading(true);
     setError(false);
     try {
-      const response = await fetch(`/api/insights?userId=${user.id}`);
+      const response = await fetch("/api/insights");
       if (!response.ok) throw new Error("Failed");
       setData(await response.json());
     } catch {
@@ -69,7 +77,7 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -78,8 +86,8 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
@@ -106,17 +114,16 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
     return (
       <Card className="corners corners-purple">
         <CardHeader>
-          <CardTitle>Welcome to your dashboard, {user.name}</CardTitle>
-          <CardDescription>
-            Once you submit your first journal entry, MindMate will surface mood trends, stress
-            patterns, and burnout estimates here.
-          </CardDescription>
+          <CardTitle>
+            {t("dashboard.emptyWelcome")}, {user.name}
+          </CardTitle>
+          <CardDescription>{t("dashboard.emptyDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild className="bg-gradient-purple">
             <Link href="/journal">
               <BookOpen className="h-4 w-4" />
-              Write your first journal entry
+              {t("dashboard.writeJournal")}
             </Link>
           </Button>
         </CardContent>
@@ -140,16 +147,42 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-3">
+      {data.daysToExam !== null && (
+        <Card className="line-bg border-primary/30">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Calendar className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+            <div>
+              <p className="font-semibold">
+                {data.daysToExam} {t("dashboard.daysLeft")} · {user.examType}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {getExamCountdownNudge(data.daysToExam, data.recentBurnout, user.examType)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total entries</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.totalEntries")}</p>
             <p className="text-2xl font-bold">{data.totalEntries}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Current burnout</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.streak")}</p>
+            <p className="text-2xl font-bold flex items-center gap-1.5">
+              <Flame className="h-5 w-5 text-orange-500" />
+              {data.streakCount}
+            </p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.streakDays")}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">{t("dashboard.currentBurnout")}</p>
             <Badge variant="outline" className="mt-1 capitalize">
               {data.recentBurnout}
             </Badge>
@@ -157,7 +190,7 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Top trigger</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.topTrigger")}</p>
             <p className="text-sm font-medium capitalize truncate">
               {data.topTrigger?.name ?? "None yet"}
             </p>
@@ -165,10 +198,30 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
         </Card>
       </div>
 
+      {data.weeklySummary && (
+        <Card className="corners corners-purple border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <CardTitle>{t("dashboard.weeklySummary")}</CardTitle>
+            </div>
+            <CardDescription>{data.weeklySummary.summary}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-accent/50 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                {t("dashboard.actionableInsight")}
+              </p>
+              <p className="text-sm">{data.weeklySummary.actionableInsight}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {data.topTrigger && data.topTrigger.count > 0 && (
         <Card className="line-bg border-primary/30">
           <CardHeader>
-            <CardTitle className="text-primary">Hidden Pattern Discovered</CardTitle>
+            <CardTitle className="text-primary">{t("dashboard.hiddenPattern")}</CardTitle>
             <CardDescription>
               Your most recurring stress trigger is{" "}
               <strong className="text-foreground">{data.topTrigger.name}</strong> — logged{" "}
@@ -182,7 +235,7 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Mood Timeline</CardTitle>
+            <CardTitle>{t("dashboard.moodTimeline")}</CardTitle>
             <CardDescription>
               Track emotional shifts across your prep journey
               {latestMood !== null && ` · Latest: ${latestMood}/5`}
@@ -203,7 +256,29 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Stress Trigger Frequency</CardTitle>
+            <CardTitle>{t("dashboard.burnoutTrend")}</CardTitle>
+            <CardDescription>1 = low, 2 = medium, 3 = high</CardDescription>
+          </CardHeader>
+          <CardContent className="h-48 sm:h-64">
+            {data.burnoutTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.burnoutTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis domain={[1, 3]} ticks={[1, 2, 3]} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="burnoutScore" stroke="hsl(var(--destructive))" strokeWidth={2} dot />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground">More entries needed to chart burnout trend.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("dashboard.triggerFrequency")}</CardTitle>
             <CardDescription>What keeps showing up in your journals</CardDescription>
           </CardHeader>
           <CardContent className="h-48 sm:h-64">
@@ -223,27 +298,49 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Confidence Trend</CardTitle>
-            <CardDescription>Higher is better — derived from mood and trigger patterns</CardDescription>
-          </CardHeader>
-          <CardContent className="h-48 sm:h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.confidenceTrend}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="confidence" stroke="hsl(var(--chart-primary))" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        {data.mockScoreCorrelation.length >= 2 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.mockScoreCorrelation")}</CardTitle>
+              <CardDescription>How mock scores relate to your mood</CardDescription>
+            </CardHeader>
+            <CardContent className="h-48 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data.mockScoreCorrelation}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="right" orientation="right" domain={[1, 5]} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line yAxisId="left" type="monotone" dataKey="mockScore" stroke="hsl(var(--chart-primary))" strokeWidth={2} name="Mock score" />
+                  <Line yAxisId="right" type="monotone" dataKey="moodScore" stroke="hsl(var(--destructive))" strokeWidth={2} name="Mood" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.confidenceTrend")}</CardTitle>
+              <CardDescription>Higher is better — derived from mood and trigger patterns</CardDescription>
+            </CardHeader>
+            <CardContent className="h-48 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.confidenceTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="confidence" stroke="hsl(var(--chart-primary))" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Current Burnout Estimate</CardTitle>
+            <CardTitle>{t("dashboard.burnoutEstimate")}</CardTitle>
             <CardDescription>AI-assessed from your recent entries</CardDescription>
           </CardHeader>
           <CardContent>
@@ -256,13 +353,13 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
         <Button asChild className="bg-gradient-purple">
           <Link href="/journal">
             <BookOpen className="h-4 w-4" />
-            Write journal
+            {t("dashboard.writeJournal")}
           </Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/companion">
             <MessageCircle className="h-4 w-4" />
-            Open companion
+            {t("dashboard.openCompanion")}
           </Link>
         </Button>
       </div>
@@ -270,7 +367,12 @@ export function InsightsDashboard({ user }: InsightsDashboardProps) {
   );
 }
 
-export function DashboardHeader({ user }: { user: StoredUser }) {
+export function DashboardHeader({
+  user,
+}: {
+  user: SessionUser & { name: string; examType: string };
+}) {
+  const { t } = useLanguage();
   const greeting = getTimeGreeting();
   return (
     <div className="mb-6 space-y-1">
@@ -278,7 +380,7 @@ export function DashboardHeader({ user }: { user: StoredUser }) {
         {greeting}, {user.name}
       </h1>
       <p className="text-muted-foreground">
-        {user.examType} prep dashboard — patterns and trends from your journals.
+        {user.examType} {t("dashboard.subtitle")}
       </p>
     </div>
   );

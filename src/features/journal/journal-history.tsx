@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/error-state";
 import { InsightCard, type InsightData } from "@/features/journal/insight-card";
 import { formatDate } from "@/lib/format-date";
-import type { StoredUser } from "@/lib/user-storage";
 
 const MOOD_LABELS = ["Very low", "Low", "Okay", "Good", "Great"];
 
@@ -22,11 +21,10 @@ export type JournalEntryItem = {
 };
 
 type JournalHistoryProps = {
-  user: StoredUser;
   refreshKey?: number;
 };
 
-export function JournalHistory({ user, refreshKey = 0 }: JournalHistoryProps) {
+export function JournalHistory({ refreshKey = 0 }: JournalHistoryProps) {
   const [entries, setEntries] = useState<JournalEntryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,7 +34,7 @@ export function JournalHistory({ user, refreshKey = 0 }: JournalHistoryProps) {
     setLoading(true);
     setError(false);
     try {
-      const response = await fetch(`/api/journal?userId=${user.id}`);
+      const response = await fetch("/api/journal");
       if (!response.ok) throw new Error("Failed");
       const data = (await response.json()) as { entries: JournalEntryItem[] };
       setEntries(data.entries);
@@ -45,7 +43,7 @@ export function JournalHistory({ user, refreshKey = 0 }: JournalHistoryProps) {
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, []);
 
   useEffect(() => {
     void load();

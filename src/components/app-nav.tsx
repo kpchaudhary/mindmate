@@ -26,18 +26,19 @@ import {
 } from "@/components/ui/tooltip";
 import { SettingsSheet } from "@/features/settings/settings-sheet";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/language-context";
 import { getUserInitials } from "@/lib/user-initials";
-import type { StoredUser } from "@/lib/user-storage";
+import type { SessionUser } from "@/lib/auth/types";
 
-const NAV_ITEMS = [
-  { href: "/insights", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/journal", label: "Journal", icon: BookOpen },
-  { href: "/companion", label: "Companion", icon: MessageCircle },
+const NAV_HREFS = [
+  { href: "/insights", key: "nav.dashboard" as const, icon: LayoutDashboard },
+  { href: "/journal", key: "nav.journal" as const, icon: BookOpen },
+  { href: "/companion", key: "nav.companion" as const, icon: MessageCircle },
 ];
 
 type AppNavProps = {
-  user: StoredUser;
-  onUserUpdate: (user: StoredUser) => void;
+  user: SessionUser & { name: string; examType: string };
+  onUserUpdate: (user: SessionUser & { name: string; examType: string }) => void;
 };
 
 function NavLink({
@@ -82,6 +83,9 @@ function NavLink({
 export function AppNav({ user, onUserUpdate }: AppNavProps) {
   const pathname = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const navItems = NAV_HREFS.map((item) => ({ ...item, label: t(item.key) }));
 
   return (
     <>
@@ -100,7 +104,7 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
-            {NAV_ITEMS.map(({ href, label, icon }) => (
+            {navItems.map(({ href, label, icon }) => (
               <NavLink
                 key={href}
                 href={href}
@@ -140,7 +144,7 @@ export function AppNav({ user, onUserUpdate }: AppNavProps) {
         aria-label="Mobile"
       >
         <div className="mx-auto flex max-w-6xl items-stretch justify-around">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link

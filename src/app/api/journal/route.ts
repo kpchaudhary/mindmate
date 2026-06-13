@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 import { journalRequestSchema } from "@/lib/ai/schemas";
 import { analyzeJournal } from "@/lib/ai/gemini";
+import { isSessionUser, requireSession } from "@/lib/auth/require-session";
 import {
   createJournalWithAnalysis,
   getJournalEntriesForUser,
   getRecentJournalContext,
   getTriggerFrequency,
   getUserById,
+  updateStreakOnJournal,
 } from "@/lib/db/repositories";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const sessionResult = await requireSession();
+    if (!isSessionUser(sessionResult)) return sessionResult;
 
-    if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
-    }
-
-    const entries = await getJournalEntriesForUser(userId);
+    const entries = await getJournalEntriesForUser(sessionResult.id);
 
     return NextResponse.json({
       entries: entries.map((entry) => ({
@@ -47,6 +45,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const sessionResult = await requireSession();
+    if (!isSessionUser(sessionResult)) return sessionResult;
+
     const body = await request.json();
     const parsed = journalRequestSchema.safeParse(body);
 
@@ -54,16 +55,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { userId, content, moodScore } = parsed.data;
-    const user = await getUserById(userId);
+    const { content, moodScore, mockScore } = parsed.data;
+    const user = await getUserById(sessionResult.id);
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user || !user.name || !user.examType) {
+      return NextResponse.json({ error: "Profile incomplete" }, { status: 400 });
     }
 
     const [recentEntries, triggerFrequency] = await Promise.all([
-      getRecentJournalContext(userId, 5),
-      getTriggerFrequency(userId),
+      getRecentJournalContext(sessionResult.id, 5),
+      getTriggerFrequency(sessionResult.id),
     ]);
 
     const analysis = await analyzeJournal({
@@ -79,12 +80,14 @@ export async function POST(request: Request) {
         burnoutLevel: e.burnoutLevel,
       })),
       triggerFrequency,
+      language: user.language === "hi" ? "hi" : "en",
     });
 
     const { entry, analysis: savedAnalysis } = await createJournalWithAnalysis({
-      userId,
+      userId: sessionResult.id,
       content,
       moodScore,
+      mockScore: mockScore ?? null,
       analysis: {
         mood: analysis.mood,
         emotions: analysis.emotionalPatterns,
@@ -99,8 +102,11 @@ export async function POST(request: Request) {
       },
     });
 
+    const streakCount = await updateStreakOnJournal(sessionResult.id);
+
     return NextResponse.json({
       entryId: entry.id,
+      streakCount,
       analysis: {
         mood: savedAnalysis.mood,
         emotionalPatterns: savedAnalysis.emotions,

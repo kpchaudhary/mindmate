@@ -18,7 +18,7 @@ function JournalContent() {
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <JournalForm user={user} onSubmitted={() => setRefreshKey((k) => k + 1)} />
-        <JournalHistory user={user} refreshKey={refreshKey} />
+        <JournalHistory refreshKey={refreshKey} />
       </div>
     </>
   );
